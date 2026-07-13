@@ -112,6 +112,19 @@ The smoke suite exercises the whole pipeline on tiny problem sizes (it checks th
 models simulate and each study runs end-to-end and writes well-formed output); it does
 not assert the full-precision numerical results.
 
+## Docker
+
+A container image with the code and all dependencies preinstalled is published to the
+GitHub Container Registry on each version tag (see `docker/Dockerfile` and the
+`Create and publish a Docker image` workflow):
+
+```bash
+docker pull ghcr.io/milzj/saa-control-clt-simulations:latest
+docker run --rm -it ghcr.io/milzj/saa-control-clt-simulations
+# inside the container, e.g.:
+scripts/fed_batch_reactor/run_clt.sh
+```
+
 ## Citation
 
 If you use this code, please cite it using the metadata in [`CITATION.cff`](CITATION.cff).
