@@ -22,7 +22,8 @@ per replication, no re-solve.  The R replicate solves run in parallel (default c
 while each solve stays serial.  Raw indicators are saved to
 results/ethanol_fermentation/coverage/<stamp>/coverage_plugin.json and the LaTeX table
 to coverage_plugin.tex, so the table can be re-derived via
-``ensemblecontrol.coverage_latex_table`` without re-running.
+``ensemblecontrol.coverage_latex_table`` without re-running.  The raw per-replication CI
+endpoints are additionally saved to coverage_plugin_intervals.json.
 
 Usage (from the repo root; MPLBACKEND=Agg on headless machines):
     python scripts/ethanol_fermentation/coverage.py
@@ -39,7 +40,7 @@ import numpy as np
 
 import ensemblecontrol
 from ensemblecontrol import build_lock, core_budget   # CasADi build lock; cpu-2
-from saa_clt.outputs import study_dir
+from saa_clt.outputs import study_dir, save_coverage_intervals
 from model import EthanolFermentation
 from config import (SAMPLE_SIZES, COVERAGE_ROOT_SEED, COVERAGE_REPLICATIONS,
                     COVERAGE_N_REF, COVERAGE_NINTERVALS, COVERAGE_LEVELS, CAP,
@@ -120,13 +121,20 @@ def main():
         levels=COVERAGE_LEVELS, warm_start=False, workers=args.workers,
         progress=progress, ref_solve=ref_solve)
 
+    meta = {"model": "EthanolFermentation", "ci": "plugin",
+            "sampler": "UniformRelativeSampler",
+            "radius": model.perturbation_radius, "seed": COVERAGE_ROOT_SEED,
+            "cap": CAP}
     path = ensemblecontrol.save_coverage_run(
-        study, os.path.join(run_dir, "coverage_plugin.json"),
-        meta={"model": "EthanolFermentation", "ci": "plugin",
-              "sampler": "UniformRelativeSampler",
-              "radius": model.perturbation_radius, "seed": COVERAGE_ROOT_SEED,
-              "cap": CAP},
+        study, os.path.join(run_dir, "coverage_plugin.json"), meta=meta,
         delta=args.deltas[0])   # .txt summary uses the first delta (matches the .tex)
+
+    # Companion to coverage_plugin.json: the raw per-replication CI endpoints (which
+    # save_coverage_run drops, keeping only the cover/no-cover indicators).
+    save_coverage_intervals(study, os.path.join(run_dir,
+                                                "coverage_plugin_intervals.json"),
+                            meta=meta)
+    print("[plugin] wrote raw CI endpoints -> coverage_plugin_intervals.json", flush=True)
 
     caption = ("Estimated coverage of the plug-in confidence interval (Algorithm 1) "
                "for the SAA optimal value of the ethanol fermentation reactor. The "

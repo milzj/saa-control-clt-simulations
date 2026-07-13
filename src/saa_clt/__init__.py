@@ -15,7 +15,8 @@ from . import postprocess
 from .config import ipopt_options
 from .warmstart import (project_interior, feasible_ramp, substeps_for,
                         INTEGRATION_STEPS)
-from .outputs import study_dir, repo_root, example_name
+from .outputs import (study_dir, repo_root, example_name,
+                      save_coverage_intervals)
 from .postprocess import (plot_phi_constructed_control,
                           plot_postprocessed_controls, plot_direct_controls)
 
@@ -23,7 +24,7 @@ __all__ = [
     "config", "warmstart", "outputs", "postprocess",
     "ipopt_options",
     "project_interior", "feasible_ramp", "substeps_for", "INTEGRATION_STEPS",
-    "study_dir", "repo_root", "example_name",
+    "study_dir", "repo_root", "example_name", "save_coverage_intervals",
     "plot_phi_constructed_control", "plot_postprocessed_controls",
     "plot_direct_controls",
 ]

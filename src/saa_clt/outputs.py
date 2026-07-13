@@ -7,9 +7,13 @@ driver's parent folder and the repository root is located by walking up to the
 directory that contains ``pyproject.toml``.
 """
 
+import json
 import os
 
-__all__ = ["repo_root", "example_name", "study_dir"]
+import numpy as np
+from scipy.stats import norm
+
+__all__ = ["repo_root", "example_name", "study_dir", "save_coverage_intervals"]
 
 
 def repo_root(start):
@@ -44,3 +48,56 @@ def study_dir(caller_file, study, stamp, make=True):
     if make:
         os.makedirs(path, exist_ok=True)
     return path
+
+
+def save_coverage_intervals(study, json_path, meta=None):
+    """Persist the RAW per-replication plug-in CI endpoints from a coverage study.
+
+    ``ensemblecontrol.coverage_study`` returns the interval endpoints in
+    ``study["bounds_by_N"][N][level] = {"lo": array[R], "hi": array[R]}`` but
+    ``ensemblecontrol.save_coverage_run`` keeps only the cover/no-cover indicators.
+    This writes those endpoints, for every one of the R replications, to ``json_path``
+    -- the companion to ``coverage_plugin.json`` -- so interval widths, miss distances,
+    and the per-replicate SAA optimum can be inspected without re-running the study.
+
+    The plug-in CI is symmetric about J_hat_N* (``lo = Jhat - z*se``, ``hi = Jhat +
+    z*se``), so the center ``J_hat_N = (lo+hi)/2`` (the per-replicate SAA optimal value)
+    and the level-independent standard error ``se = (hi-lo)/(2z)`` are recovered from the
+    endpoints and stored alongside them.  Per-level arrays are lists aligned with
+    ``levels`` (matching ``save_coverage_run``, which avoids float JSON keys).  Pure; does
+    no solving.  Returns ``json_path``.
+    """
+    levels = list(study["levels"])
+    z = [float(norm.ppf(1.0 - (1.0 - lvl) / 2.0)) for lvl in levels]
+    bounds_by_N = study["bounds_by_N"]
+
+    results = []
+    for N in sorted(bounds_by_N):
+        per = bounds_by_N[N]
+        lo = [np.asarray(per[lvl]["lo"], dtype=float) for lvl in levels]
+        hi = [np.asarray(per[lvl]["hi"], dtype=float) for lvl in levels]
+        # Center / se are level-independent (symmetric CI); recover them from level 0.
+        jhat = 0.5 * (lo[0] + hi[0])
+        se = 0.5 * (hi[0] - lo[0]) / z[0]
+        results.append({
+            "N": int(N),
+            "J_hat_N": jhat.tolist(),
+            "se": se.tolist(),
+            "lo": [col.tolist() for col in lo],
+            "hi": [col.tolist() for col in hi],
+        })
+
+    data = {
+        "algorithm": "coverage_intervals",
+        "ci": (meta or {}).get("ci", "plugin"),
+        "levels": levels,
+        "n_ref": int(study["n_ref"]),
+        "f_ref": float(study["f_ref"]),
+        "R": int(study["R"]),
+        "sample_sizes": [int(N) for N in study["sample_sizes"]],
+        "meta": meta,
+        "results": results,
+    }
+    with open(json_path, "w") as fh:
+        json.dump(data, fh)   # compact (no indent): ~3.3 MB at R=5000, scales with R
+    return json_path
