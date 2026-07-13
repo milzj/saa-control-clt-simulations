@@ -76,7 +76,7 @@ INFERENCE_NINTERVALS = 50      # coarse control mesh for the repeated solves
 CONFIDENCE_LEVELS = (0.90, 0.95, 0.99)
 
 # -- Coverage test of the plug-in CI -----------------------------------------
-COVERAGE_REPLICATIONS = 300    # plug-in replications per N (cost R + 1 solves per N)
+COVERAGE_REPLICATIONS = 10000    # plug-in replications per N (cost R + 1 solves per N)
 COVERAGE_N_REF = CLT_N_REF     # reference sample size proxying J* (shared with the CLT)
 COVERAGE_NINTERVALS = CLT_NINTERVALS   # coarse control mesh (matches CLT / inference)
 COVERAGE_LEVELS = CONFIDENCE_LEVELS    # coverage validates exactly the CI levels 1 - beta
