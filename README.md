@@ -51,6 +51,17 @@ uv pip install .                     # or: uv pip install -e ".[test]"
 The run scripts prefer the repository's `.venv/bin/python`, so once `.venv` exists you
 can run the studies without activating it; activating it also works.
 
+### Updating the pinned requirements
+
+[`requirements.txt`](requirements.txt) is a pip-compiled lock file generated from
+[`pyproject.toml`](pyproject.toml). After changing anything under `src/` or
+`pyproject.toml`, regenerate it so the pinned versions stay in sync:
+
+```bash
+pip install pip-tools            # provides pip-compile
+pip-compile --output-file=requirements.txt pyproject.toml
+```
+
 ## Reproducing the results
 
 Each example exposes the four studies as separate, independently runnable Python files
@@ -65,6 +76,8 @@ scripts/ethanol_fermentation/run_all.sh
 # ... or run a single study on its own, e.g.:
 scripts/fed_batch_reactor/run_clt.sh
 scripts/ethanol_fermentation/run_inference.sh
+scripts/fed_batch_reactor/run_coverage.sh
+scripts/ethanol_fermentation/run_coverage.sh
 ```
 
 The four studies, and the manuscript figure/table each produces, are:
