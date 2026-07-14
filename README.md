@@ -94,10 +94,16 @@ The four studies, and the manuscript figure/table each produces, are:
 > `--R`/`--n-ref` flags for a cheaper smoke run, e.g.
 > `scripts/fed_batch_reactor/run_coverage.sh --R 20 --n-ref 128`.
 
-Outputs are written to (both are git-ignored and regenerated on each run):
+Outputs are written to a new timestamped folder per run, so re-runs never overwrite
+each other:
 
 - `results/<example>/<study>/<stamp>/` — figures, CSVs, JSON, and LaTeX tables;
 - `logs/<example>/<study>_<stamp>.log` — the captured console output and timing.
+
+The runs behind the manuscript are **committed** here, so the reported figures and
+tables can be inspected without re-running anything. New runs land in their own
+`<stamp>` folder and are not tracked (`.gitignore` covers `results/` and `logs/`);
+`git add -f` them to archive a run.
 
 The default sample sizes, seeds, tolerances, and mesh sizes are fixed in
 [`src/saa_clt/config.py`](src/saa_clt/config.py) and reproduce the settings used for the
@@ -111,7 +117,7 @@ src/saa_clt/     shared, de-duplicated helpers (run configuration, warm starts,
 scripts/<ex>/    each example: model.py, config.py, the four study drivers, run_*.sh
 docs/            per-example problem formulations
 test/            fast pytest smoke suite
-results/ logs/   generated on run (git-ignored)
+results/ logs/   study outputs; the manuscript runs are committed, new runs are not
 ```
 
 ## Tests
