@@ -1,0 +1,17 @@
+\begin{table}[t]
+  \centering
+  \caption{Estimated coverage of the plug-in confidence interval (Algorithm 1) for the SAA optimal value of the fed-batch reactor. The population optimum is proxied by the SAA optimal value on an independent reference sample of size $N_{\mathrm{ref}} = 4096$. For each training size $N$ and nominal level $1-\beta$, $L/R$ is the empirical coverage over $R=10000$ replications and $\widehat p_{R,\delta}(L)$ is the $(1-\delta)$ lower confidence bound on the true coverage.}
+  \label{tab:coverage_plugin}
+  \begin{tabular}{rcccccc}
+    \toprule
+     & \multicolumn{2}{c}{$1-\beta = 0.90$} & \multicolumn{2}{c}{$1-\beta = 0.95$} & \multicolumn{2}{c}{$1-\beta = 0.99$} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+    $N$ & $L/R$ & $\widehat{p}_{R,10^{-6}}(L)$ & $L/R$ & $\widehat{p}_{R,10^{-6}}(L)$ & $L/R$ & $\widehat{p}_{R,10^{-6}}(L)$ \\
+    \midrule
+    8 & 0.839 & 0.821 & 0.895 & 0.880 & 0.953 & 0.943 \\
+    16 & 0.872 & 0.856 & 0.922 & 0.909 & 0.971 & 0.962 \\
+    32 & 0.883 & 0.867 & 0.934 & 0.922 & 0.984 & 0.977 \\
+    64 & 0.888 & 0.873 & 0.940 & 0.928 & 0.985 & 0.978 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

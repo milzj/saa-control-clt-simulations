@@ -1,0 +1,26 @@
+Subsampling confidence intervals for the SAA optimal value (Algorithm 2)
+Delta_r = sqrt(b) (J*_I_r - J_hat_N*)
+
+N = 8  (b = 5, m = 40)
+  J_hat_N* = -2.98945344e+01
+  90% CI: quantile_lo = -5.067287e+00  quantile_hi =  3.809071e+00  [-3.12412444e+01, -2.81029780e+01]
+  95% CI: quantile_lo = -5.067287e+00  quantile_hi =  3.870114e+00  [-3.12628264e+01, -2.81029780e+01]
+  99% CI: quantile_lo = -5.851034e+00  quantile_hi =  4.726786e+00  [-3.15657055e+01, -2.78258817e+01]
+
+N = 16  (b = 10, m = 80)
+  J_hat_N* = -3.06881133e+01
+  90% CI: quantile_lo = -5.248347e+00  quantile_hi =  4.485720e+00  [-3.18095432e+01, -2.93760265e+01]
+  95% CI: quantile_lo = -5.451247e+00  quantile_hi =  4.682426e+00  [-3.18587199e+01, -2.93253015e+01]
+  99% CI: quantile_lo = -7.081466e+00  quantile_hi =  5.235823e+00  [-3.19970690e+01, -2.89177469e+01]
+
+N = 32  (b = 19, m = 160)
+  J_hat_N* = -3.08820357e+01
+  90% CI: quantile_lo = -4.019404e+00  quantile_hi =  4.131586e+00  [-3.16124039e+01, -3.01714988e+01]
+  95% CI: quantile_lo = -4.739609e+00  quantile_hi =  4.582040e+00  [-3.16920335e+01, -3.00441834e+01]
+  99% CI: quantile_lo = -5.871603e+00  quantile_hi =  8.157272e+00  [-3.23240513e+01, -2.98440732e+01]
+
+N = 64  (b = 35, m = 320)
+  J_hat_N* = -3.13959782e+01
+  90% CI: quantile_lo = -4.040737e+00  quantile_hi =  3.420586e+00  [-3.18235515e+01, -3.08908860e+01]
+  95% CI: quantile_lo = -4.640617e+00  quantile_hi =  3.858272e+00  [-3.18782622e+01, -3.08159011e+01]
+  99% CI: quantile_lo = -6.203752e+00  quantile_hi =  6.222867e+00  [-3.21738365e+01, -3.06205092e+01]
