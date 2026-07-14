@@ -24,8 +24,8 @@ __all__ = [
     "SOLUTION_NINTERVALS", "SAA_SAMPLES", "SAMPLE_SIZES",
     "CLT_N_REF", "CLT_REPLICATIONS", "CLT_NINTERVALS",
     "INFERENCE_NINTERVALS", "CONFIDENCE_LEVELS",
-    "COVERAGE_REPLICATIONS", "COVERAGE_N_REF", "COVERAGE_NINTERVALS",
-    "COVERAGE_LEVELS",
+    "COVERAGE_REPLICATIONS", "COVERAGE_SAMPLE_SIZES", "COVERAGE_N_REF",
+    "COVERAGE_NINTERVALS", "COVERAGE_LEVELS",
     "TOL_SOLUTION", "TOL_INFERENCE",
     "ipopt_options",
 ]
@@ -60,8 +60,10 @@ COVERAGE_ROOT_SEED       = _seed(_cov_ss)      # coverage-study root (independen
 SOLUTION_NINTERVALS = 2000     # fine control mesh for the solution demo
 SAA_SAMPLES = 128              # risk-neutral ensemble size N (absolute)
 
-# -- Sample-size sweep, shared by the CLT and CI studies ---------------------
-SAMPLE_SIZES = (8, 16, 32, 64)   # N in the studies; last entry = subsampling anchor
+# -- Sample-size sweep for the CLT and inference/CI studies ------------------
+# The training sizes N those two studies sweep.  NOT the coverage study -- that
+# has its own INDEPENDENT sweep (COVERAGE_SAMPLE_SIZES, in the coverage block below).
+SAMPLE_SIZES = (8, 16, 32, 64)   # training sizes N; last entry = subsampling anchor
 
 # -- CLT replication study ---------------------------------------------------
 CLT_N_REF = 4096               # reference sample size (proxies J*)
@@ -77,6 +79,11 @@ CONFIDENCE_LEVELS = (0.90, 0.95, 0.99)
 
 # -- Coverage test of the plug-in CI -----------------------------------------
 COVERAGE_REPLICATIONS = 10000    # plug-in replications per N (cost R + 1 solves per N)
+# Coverage-study training-size sweep -- INDEPENDENT of SAMPLE_SIZES (the CLT / CI
+# sweep); the two merely coincide today and may be changed apart.  Each example may
+# also override this in its own scripts/<example>/config.py (after the wildcard
+# import) to sweep sizes different from the other example's.
+COVERAGE_SAMPLE_SIZES = (8, 16, 32, 64)
 COVERAGE_N_REF = CLT_N_REF     # reference sample size proxying J* (shared with the CLT)
 COVERAGE_NINTERVALS = CLT_NINTERVALS   # coarse control mesh (matches CLT / inference)
 COVERAGE_LEVELS = CONFIDENCE_LEVELS    # coverage validates exactly the CI levels 1 - beta

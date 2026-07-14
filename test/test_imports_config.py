@@ -21,6 +21,7 @@ def test_saa_clt_public_helpers():
 def test_config_constants():
     assert config.MASTER_SEED == 1234
     assert config.SAMPLE_SIZES == (8, 16, 32, 64)
+    assert config.COVERAGE_SAMPLE_SIZES == (8, 16, 32, 64)
     assert config.SOLUTION_NINTERVALS == 2000
     assert config.SAA_SAMPLES == 128
     assert config.CLT_N_REF == 4096

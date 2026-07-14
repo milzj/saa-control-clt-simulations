@@ -4,7 +4,7 @@ fermentation SAA optimal value.
 A (1 - beta) confidence interval for the SAA optimal value is meant to cover the
 population optimal J* with probability 1 - beta.  J* is not computable, so we proxy
 it by J_hat_ref*, the SAA value on one large independent reference sample of size
-N_ref.  For each N in SAMPLE_SIZES we run R replications -- with COMMON RANDOM NUMBERS
+N_ref.  For each N in COVERAGE_SAMPLE_SIZES we run R replications -- with COMMON RANDOM NUMBERS
 across N (each replicate draws max(N) scenarios once and its size-N CI uses the first
 N; the reference sample stays independent) -- build the plug-in CI on each, and count
 the L that cover J_hat_ref*.  The empirical coverage is L/R; the estimator
@@ -42,7 +42,7 @@ import ensemblecontrol
 from ensemblecontrol import build_lock, core_budget   # CasADi build lock; cpu-2
 from saa_clt.outputs import study_dir, save_coverage_intervals
 from model import EthanolFermentation
-from config import (SAMPLE_SIZES, COVERAGE_ROOT_SEED, COVERAGE_REPLICATIONS,
+from config import (COVERAGE_SAMPLE_SIZES, COVERAGE_ROOT_SEED, COVERAGE_REPLICATIONS,
                     COVERAGE_N_REF, COVERAGE_NINTERVALS, COVERAGE_LEVELS, CAP,
                     ipopt_options, TOL_INFERENCE, feasible_ramp, substeps_for)
 
@@ -112,12 +112,13 @@ def main():
         return out
 
     print("[plugin] coverage study: sizes=%s, R=%d, workers=%s (%d replicate solves)"
-          % (list(SAMPLE_SIZES), args.R, args.workers, args.R * len(SAMPLE_SIZES)),
+          % (list(COVERAGE_SAMPLE_SIZES), args.R, args.workers,
+             args.R * len(COVERAGE_SAMPLE_SIZES)),
           flush=True)
 
     # ci_of=None -> the default plug-in CI (one extra rollout, no re-solve).
     study = ensemblecontrol.coverage_study(
-        root, solve, sample_sizes=SAMPLE_SIZES, R=args.R, n_ref=args.n_ref,
+        root, solve, sample_sizes=COVERAGE_SAMPLE_SIZES, R=args.R, n_ref=args.n_ref,
         levels=COVERAGE_LEVELS, warm_start=False, workers=args.workers,
         progress=progress, ref_solve=ref_solve)
 
