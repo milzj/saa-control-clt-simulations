@@ -85,7 +85,7 @@ The four studies, and the manuscript figure/table each produces, are:
 | Script (`run_*.sh` / `*.py`) | Study | Produces |
 | --- | --- | --- |
 | `nominal_saa` | Nominal + risk-neutral (SAA) solution | postprocessed control/state figures |
-| `clt`         | Central-limit-theorem study | scaled-error histograms + optimization-bias figure |
+| `clt`         | Central-limit-theorem study | scaled-error histograms (per `N`: the fitted normal and the theory curve `N(0, sigma^2)` overlaid, then each alone) + optimization-bias figure + the reference solve (`clt_reference.json`) |
 | `inference`   | Plug-in (Algorithm 1) + subsampling (Algorithm 2) CIs | confidence-interval figures |
 | `coverage`    | Plug-in coverage study | coverage LaTeX table (`coverage_plugin.tex`) |
 

@@ -14,7 +14,8 @@ import numpy as np
 from scipy.stats import norm
 
 __all__ = ["repo_root", "example_name", "study_dir", "latest_run_dir",
-           "save_coverage_intervals", "load_coverage_intervals"]
+           "save_coverage_intervals", "load_coverage_intervals",
+           "save_clt_reference"]
 
 
 def repo_root(start):
@@ -73,6 +74,42 @@ def latest_run_dir(caller_file, study, contains=None):
             continue
         stamps.append(name)
     return os.path.join(root, max(stamps)) if stamps else None
+
+
+def save_clt_reference(study, json_path, sigma_ref=None, meta=None):
+    """Persist the REFERENCE solve of a CLT replication study.
+
+    ``ensemblecontrol.clt_replication_study`` returns the reference solve as
+    ``study["w_ref"]`` (the optimal control on the independent size-N_ref sample,
+    whose value J_hat_ref* proxies the population optimum J*), but
+    ``ensemblecontrol.save_clt_run`` keeps only that VALUE -- ``f_ref`` -- and drops
+    the control itself.  ``clt.json`` therefore cannot answer "what was the reference
+    solution?", nor can anything downstream re-derive a plug-in sigma from it.  This
+    writes the control alongside its value to ``json_path`` -- the companion to
+    ``clt.json`` -- so the reference solve survives the run.
+
+    ``sigma_ref`` is the plug-in sigma_hat at that solve (the CLT's asymptotic
+    sigma^2 = Var F(x*, xi)), recorded here too so the reference solve's value,
+    control and variance live in one place.
+
+    The reference SAMPLE is not stored: it is reproducible from the run's seed --
+    ``clt_replication_study`` spawns ``1 + R`` streams from the root and the first is
+    the reference -- so ``w_ref`` plus ``meta["seed"]`` and R is enough to re-roll the
+    losses without re-solving.  Pure; does no solving.  Returns ``json_path``.
+    """
+    w_ref = np.asarray(study["w_ref"], dtype=float).ravel()
+    data = {
+        "algorithm": "clt_reference",
+        "n_ref": int(study["n_ref"]),
+        "f_ref": float(study["f_ref"]),
+        "q": int(study["q"]),
+        "sigma_ref": None if sigma_ref is None else float(sigma_ref),
+        "w_ref": w_ref.tolist(),
+        "meta": meta,
+    }
+    with open(json_path, "w") as fh:
+        json.dump(data, fh, indent=1)
+    return json_path
 
 
 def save_coverage_intervals(study, json_path, meta=None):
