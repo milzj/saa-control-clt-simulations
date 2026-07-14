@@ -21,7 +21,8 @@ from .outputs import (study_dir, repo_root, example_name, latest_run_dir,
                       save_coverage_intervals, load_coverage_intervals,
                       save_clt_reference)
 from .postprocess import (plot_phi_constructed_control,
-                          plot_postprocessed_controls, plot_direct_controls)
+                          plot_postprocessed_controls, plot_direct_controls,
+                          annotate_nominal)
 from .clt_plots import plot_clt_normal
 from .coverage_plotting import plot_coverage_intervals, plot_interval_grid
 
@@ -32,6 +33,7 @@ __all__ = [
     "study_dir", "repo_root", "example_name", "latest_run_dir",
     "save_coverage_intervals", "load_coverage_intervals", "save_clt_reference",
     "plot_phi_constructed_control", "plot_postprocessed_controls",
-    "plot_direct_controls", "plot_clt_normal", "plot_coverage_intervals",
+    "plot_direct_controls", "annotate_nominal",
+    "plot_clt_normal", "plot_coverage_intervals",
     "plot_interval_grid",
 ]

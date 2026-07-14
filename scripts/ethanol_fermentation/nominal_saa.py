@@ -29,7 +29,7 @@ import ensemblecontrol
 from saa_clt.outputs import study_dir
 from saa_clt.postprocess import (plot_phi_constructed_control,
                                  plot_postprocessed_controls,
-                                 plot_direct_controls)
+                                 plot_direct_controls, annotate_nominal)
 from model import EthanolFermentation
 from config import (SOLUTION_NINTERVALS, SAA_SAMPLES, SAA_SAMPLER_SEED, CAP,
                     ipopt_options, TOL_SOLUTION, feasible_ramp, substeps_for)
@@ -87,28 +87,42 @@ def _save_both(fig, base_no_ext):
         fig.savefig("%s.%s" % (base_no_ext, fmt), bbox_inches="tight")
 
 
-def _plot_states(plotter, case, base, nsigma):
+def _plot_states(plotter, case, base, nsigma, deterministic=False):
     # per-state trajectories with a +/- nsigma ensemble band; clean "<case> x{j}"
     # legends and "<base>_x{j}.{png,pdf}" filenames.
     radius = plotter.saa_problem.control_problem.perturbation_radius
-    figs, _ = plotter.plot_states(
-        per_state=True, radius=radius, nsigma=nsigma,
+    figs, axes = plotter.plot_states(
+        per_state=True, radius=None if deterministic else radius,
+        annotate=not deterministic, nsigma=nsigma,
         state_labels=["%s x%d" % (case, j) for j in range(plotter.nstates)])
+    if deterministic:
+        # q only: the nominal solve has no ensemble and no perturbation.
+        for axis in np.atleast_1d(axes):
+            annotate_nominal(axis, plotter.nintervals)
     for j, fig in enumerate(figs):
         _save_both(fig, "%s_x%d" % (base, j))
         plt.close(fig)
 
 
-def plot(saa_problem, w_opt, file_prefix, case, case_dir, stamp, nsigma=1):
+def plot(saa_problem, w_opt, file_prefix, case, case_dir, stamp, nsigma=1,
+         deterministic=False):
     plotter = ensemblecontrol.SolutionPlotter(saa_problem, w_opt)
     radius = saa_problem.control_problem.perturbation_radius
     base = os.path.join(case_dir, "%s_%s" % (file_prefix, stamp))
 
-    plotter.plot_controls(control_labels=["%s control" % case], step=True,
-                          radius=radius, savepath=base + "_control.png",
-                          formats=FORMATS)
+    if deterministic:
+        # SolutionPlotter's annotation always carries N (and r when a radius is
+        # given); the nominal solve has neither, so annotate with q ourselves.
+        fig, ax = plotter.plot_controls(control_labels=["%s control" % case],
+                                        step=True, annotate=False)
+        annotate_nominal(ax, plotter.nintervals)
+        _save_both(fig, base + "_control")
+    else:
+        plotter.plot_controls(control_labels=["%s control" % case], step=True,
+                              radius=radius, savepath=base + "_control.png",
+                              formats=FORMATS)
     plt.close("all")
-    _plot_states(plotter, case, base, nsigma)
+    _plot_states(plotter, case, base, nsigma, deterministic=deterministic)
 
     # save the direct (solved) control(s): interval left-edge time + value/control
     t_left = plotter.tgrid[:-1]
@@ -151,11 +165,12 @@ if __name__ == "__main__":
     nominal_model.nintervals = NINTERVALS
     nominal_param = nominal_model.nominal_param
     saa_nom, w_nom = solve(nominal_model, nominal_param)
-    td_nom, ud_nom = plot(saa_nom, w_nom, "nominal", "nominal", NOMINAL_DIR, stamp)
+    td_nom, ud_nom = plot(saa_nom, w_nom, "nominal", "nominal", NOMINAL_DIR,
+                          stamp, deterministic=True)
     # constructed control via nominal phi_j (switching structure from this run)
     t_nom, u_nom = plot_phi_constructed_control(
         nominal_model, nominal_param, w_nom, "nominal", outdir=NOMINAL_DIR,
-        S=POSTPROC_S, stamp=stamp, case="nominal")
+        S=POSTPROC_S, stamp=stamp, case="nominal", deterministic=True)
 
     # -- Risk-neutral (SAA) problem ------------------------------------------
     saa_model = EthanolFermentation()

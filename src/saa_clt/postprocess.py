@@ -8,7 +8,8 @@ fed-batch example simply never passes ``case``.  Every figure is written to the
 explicit ``outdir``/``savepath`` the caller passes (a
 ``results/<example>/...`` run folder).
 
-    plot_phi_constructed_control, plot_postprocessed_controls, plot_direct_controls
+    plot_phi_constructed_control, plot_postprocessed_controls,
+    plot_direct_controls, annotate_nominal
 """
 
 import os
@@ -56,6 +57,26 @@ def _nqr_label(N=None, q=None, r=None):
     return (r"($%s$)" % ", ".join(parts)) if parts else None
 
 
+def annotate_nominal(ax, q):
+    """Append the deterministic (nominal) legend annotation ``($q=...$)`` to ``ax``.
+
+    The nominal problem is solved AT the nominal parameters: there is no ensemble and
+    no perturbation.  The usual ($N, q, r$) annotation would therefore assert two
+    things this solve never used -- an ensemble size (N=1, an artefact of passing the
+    single nominal parameter vector as a one-member "ensemble") and a scenario radius
+    r (read off the model, which carries it whether or not anything was sampled).
+    Only the control-mesh size q is meaningful, so only q is shown.
+
+    Used for the nominal figures; ``SolutionPlotter``'s own annotation cannot express
+    this (both of its forms carry N), so callers pass ``annotate=False`` and apply
+    this instead.
+    """
+    handles, labels = ax.get_legend_handles_labels()
+    handles.append(mpatches.Patch(color="none"))
+    labels.append(_nqr_label(q=q))
+    ax.legend(handles, labels)
+
+
 def _savefig_both(fig, savepath, formats=("png", "pdf"), **savefig_kw):
     """Save ``fig`` once per format (default PNG + PDF), swapping the extension of
     ``savepath``.  Returns the list of written paths."""
@@ -69,7 +90,8 @@ def _savefig_both(fig, savepath, formats=("png", "pdf"), **savefig_kw):
 
 
 def plot_phi_constructed_control(model, samples, w_opt, prefix, outdir="output",
-                                 max_samples=None, S=1, stamp=None, case=None):
+                                 max_samples=None, S=1, stamp=None, case=None,
+                                 deterministic=False):
     """From a solved single-shooting control w_opt and the parameter `samples`
     (nominal = one vector, risk-neutral = an ensemble), reconstruct the
     (ensemble) singular control via phi_j = -sum_s A_s / sum_s B_s using per-
@@ -80,6 +102,11 @@ def plot_phi_constructed_control(model, samples, w_opt, prefix, outdir="output",
     `case` labels the standalone postprocessed-control plot as
     "postprocessed <case> control" (e.g. "postprocessed SAA control"); when None
     the legend falls back to the generic "postprocessed control".
+
+    `deterministic` marks `samples` as the single nominal parameter vector rather
+    than an ensemble, so the postprocessed-control legend is annotated with the
+    control-mesh size q alone (see `annotate_nominal`): N=1 and the model's
+    scenario radius r would both describe an ensemble this solve never used.
     """
     _configure_fonts()
     stem = prefix if stamp is None else "%s_%s" % (prefix, stamp)
@@ -135,10 +162,13 @@ def plot_phi_constructed_control(model, samples, w_opt, prefix, outdir="output",
                   else "postprocessed control")
     ax2.step(t, y, where="pre", label=ctrl_label)
     ax2.set_xlabel(r"$t$"); ax2.grid()
-    handles, labels = ax2.get_legend_handles_labels()
-    handles.append(mpatches.Patch(color="none"))
-    labels.append(_nqr_label(N=smp.shape[0], q=N, r=radius))
-    ax2.legend(handles, labels)
+    if deterministic:
+        annotate_nominal(ax2, N)
+    else:
+        handles, labels = ax2.get_legend_handles_labels()
+        handles.append(mpatches.Patch(color="none"))
+        labels.append(_nqr_label(N=smp.shape[0], q=N, r=radius))
+        ax2.legend(handles, labels)
     pth2 = _savefig_both(fig2, os.path.join(outdir,
                          stem + "_postprocessed_control.png"))[0]
     plt.close(fig2)
