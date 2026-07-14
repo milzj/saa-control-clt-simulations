@@ -6,4 +6,5 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 "$HERE/run_nominal_saa.sh"
 "$HERE/run_clt.sh"
 "$HERE/run_inference.sh"
-"$HERE/run_coverage.sh"
+# Coverage not included in paper
+# "$HERE/run_coverage.sh"

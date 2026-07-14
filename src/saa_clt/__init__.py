@@ -12,19 +12,23 @@ from . import config
 from . import warmstart
 from . import outputs
 from . import postprocess
+from . import coverage_plotting
 from .config import ipopt_options
 from .warmstart import (project_interior, feasible_ramp, substeps_for,
                         INTEGRATION_STEPS)
-from .outputs import (study_dir, repo_root, example_name,
-                      save_coverage_intervals)
+from .outputs import (study_dir, repo_root, example_name, latest_run_dir,
+                      save_coverage_intervals, load_coverage_intervals)
 from .postprocess import (plot_phi_constructed_control,
                           plot_postprocessed_controls, plot_direct_controls)
+from .coverage_plotting import plot_coverage_intervals, plot_interval_grid
 
 __all__ = [
     "config", "warmstart", "outputs", "postprocess",
-    "ipopt_options",
+    "coverage_plotting", "ipopt_options",
     "project_interior", "feasible_ramp", "substeps_for", "INTEGRATION_STEPS",
-    "study_dir", "repo_root", "example_name", "save_coverage_intervals",
+    "study_dir", "repo_root", "example_name", "latest_run_dir",
+    "save_coverage_intervals", "load_coverage_intervals",
     "plot_phi_constructed_control", "plot_postprocessed_controls",
-    "plot_direct_controls",
+    "plot_direct_controls", "plot_coverage_intervals",
+    "plot_interval_grid",
 ]

@@ -13,7 +13,8 @@ import os
 import numpy as np
 from scipy.stats import norm
 
-__all__ = ["repo_root", "example_name", "study_dir", "save_coverage_intervals"]
+__all__ = ["repo_root", "example_name", "study_dir", "latest_run_dir",
+           "save_coverage_intervals", "load_coverage_intervals"]
 
 
 def repo_root(start):
@@ -48,6 +49,30 @@ def study_dir(caller_file, study, stamp, make=True):
     if make:
         os.makedirs(path, exist_ok=True)
     return path
+
+
+def latest_run_dir(caller_file, study, contains=None):
+    """Newest ``<repo>/results/<example>/<study>/<stamp>/`` folder for the caller.
+
+    Stamps are ``%Y-%m-%dT%H-%M-%S``, so the lexicographic max is the newest run.
+    When ``contains`` is given, only folders holding a file of that name are
+    considered -- e.g. ``contains="coverage_plugin_intervals.json"`` skips coverage
+    runs made before the endpoint writer existed, and any run that died before
+    writing it.  Returns ``None`` when no folder matches; creates nothing.
+    """
+    root = os.path.join(repo_root(caller_file), "results",
+                        example_name(caller_file), study)
+    if not os.path.isdir(root):
+        return None
+    stamps = []
+    for name in os.listdir(root):
+        path = os.path.join(root, name)
+        if not os.path.isdir(path):
+            continue
+        if contains is not None and not os.path.exists(os.path.join(path, contains)):
+            continue
+        stamps.append(name)
+    return os.path.join(root, max(stamps)) if stamps else None
 
 
 def save_coverage_intervals(study, json_path, meta=None):
@@ -101,3 +126,22 @@ def save_coverage_intervals(study, json_path, meta=None):
     with open(json_path, "w") as fh:
         json.dump(data, fh)   # compact (no indent): ~3.3 MB at R=5000, scales with R
     return json_path
+
+
+def load_coverage_intervals(path):
+    """Read back what ``save_coverage_intervals`` wrote, as numpy arrays.
+
+    Returns the JSON dict with each ``results`` block's payload converted:
+    ``lo``/``hi`` become ``(n_levels, R)`` arrays whose rows align with ``levels``,
+    and ``J_hat_N``/``se`` become ``(R,)`` arrays.  The cover/no-cover indicator is
+    not stored -- derive it from the endpoints as
+    ``(lo <= data["f_ref"]) & (data["f_ref"] <= hi)``.
+    """
+    with open(path) as fh:
+        data = json.load(fh)
+    for res in data["results"]:
+        res["J_hat_N"] = np.asarray(res["J_hat_N"], dtype=float)
+        res["se"] = np.asarray(res["se"], dtype=float)
+        res["lo"] = np.asarray(res["lo"], dtype=float)
+        res["hi"] = np.asarray(res["hi"], dtype=float)
+    return data
