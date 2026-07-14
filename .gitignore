@@ -1,0 +1,28 @@
+# Study outputs and run logs: a new run's <stamp> folder stays untracked, so local
+# runs never dirty the tree.  The runs behind the manuscript are committed anyway
+# (added with `git add -f`), so this does not apply to them -- ignore rules have no
+# effect on files that are already tracked.
+/results/*
+!/results/.gitkeep
+/logs/*
+!/logs/.gitkeep
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/

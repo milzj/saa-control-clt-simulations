@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Run the 'inference' study for fed_batch_reactor, timed, with stdout+stderr logged.
+# Prefers the repo virtualenv (.venv); falls back to the active 'python'.
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+EXAMPLE="$(basename "$HERE")"
+ROOT="$(cd "$HERE/../.." && pwd)"
+PY="$ROOT/.venv/bin/python"; [ -x "$PY" ] || PY="$(command -v python)"
+STAMP="$(date +%Y-%m-%dT%H-%M-%S)"
+LOGDIR="$ROOT/logs/$EXAMPLE"; mkdir -p "$LOGDIR"
+LOG="$LOGDIR/inference_$STAMP.log"
+echo "[run] $EXAMPLE inference  ->  $LOG"
+cd "$HERE"
+# Time the solve and tee stdout+stderr (incl. the 'time' report) into the log.
+{ time MPLBACKEND=Agg "$PY" inference.py "$@" ; } 2>&1 | tee "$LOG"
