@@ -1,4 +1,6 @@
-# saa-control-clt-simulations
+[![DOI](https://zenodo.org/badge/1298618702.svg)](https://doi.org/10.5281/zenodo.21365487)
+
+# Supplementary material for the manuscript: Statistical Limit Theorems for Optimal Control under Uncertainty
 
 Simulation code reproducing the two numerical examples of the manuscript
 *Statistical Limit Theorems for Optimal Control under Uncertainty* (Javeed and Milz):
