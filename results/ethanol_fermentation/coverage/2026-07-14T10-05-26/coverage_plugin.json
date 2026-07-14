@@ -1,0 +1,109 @@
+{
+  "algorithm": "coverage",
+  "levels": [
+    0.9,
+    0.95,
+    0.99
+  ],
+  "n_ref": 16,
+  "f_ref": -20239.225124601664,
+  "q": 50,
+  "r": null,
+  "R": 2,
+  "results": [
+    {
+      "N": 8,
+      "indicators": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "N": 16,
+      "indicators": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "N": 32,
+      "indicators": [
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          1
+        ]
+      ]
+    },
+    {
+      "N": 64,
+      "indicators": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    },
+    {
+      "N": 128,
+      "indicators": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ]
+    }
+  ],
+  "meta": {
+    "model": "EthanolFermentation",
+    "ci": "plugin",
+    "sampler": "UniformRelativeSampler",
+    "radius": 0.06,
+    "seed": 299109036,
+    "cap": 200.0,
+    "created": "2026-07-14T10:09:36"
+  }
+}

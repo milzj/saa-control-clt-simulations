@@ -1,0 +1,30 @@
+Monte-Carlo coverage test of the plug-in confidence interval
+coverage = (# CIs covering J_hat_ref*) / R
+p_lower  = (1-delta) lower bound on the true coverage (delta = 1e-06)
+J_hat_ref* = -2.02392251e+04  (N_ref = 16)
+R = 2 replications per N
+
+N = 8
+  level 0.90:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+  level 0.95:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+  level 0.99:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+
+N = 16
+  level 0.90:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+  level 0.95:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+  level 0.99:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+
+N = 32
+  level 0.90:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+  level 0.95:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+  level 0.99:  coverage = 2/2 = 1.0000   p_lower = 0.0010
+
+N = 64
+  level 0.90:  coverage = 0/2 = 0.0000   p_lower = 0.0000
+  level 0.95:  coverage = 1/2 = 0.5000   p_lower = 0.0000
+  level 0.99:  coverage = 1/2 = 0.5000   p_lower = 0.0000
+
+N = 128
+  level 0.90:  coverage = 0/2 = 0.0000   p_lower = 0.0000
+  level 0.95:  coverage = 0/2 = 0.0000   p_lower = 0.0000
+  level 0.99:  coverage = 1/2 = 0.5000   p_lower = 0.0000

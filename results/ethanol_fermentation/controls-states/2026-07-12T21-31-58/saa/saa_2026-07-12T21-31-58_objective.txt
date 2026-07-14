@@ -1,0 +1,5 @@
+saa objective  (SAA mean C = mean_s [F(x^(s)(T))] = mean of the model final cost,  N=128 samples)
+  direct control        C = -20657.5322830539   (reward 20657.5322830539)
+  postprocessed (phi)   C = -20494.2474990243   (reward 20494.2474990243)
+  difference (post - direct) = +1.632848e+02
+  relative difference        = +7.904370e-03   (+0.7904 %)
