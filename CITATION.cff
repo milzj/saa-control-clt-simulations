@@ -1,9 +1,10 @@
 cff-version: 1.2.0
-title: "Supplementary material for the manuscript: Statistical Limit Theorems for Optimal Control under Uncertainty"
+title: "Supplementary material for the manuscript: Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty"
 type: software
 authors:
   - family-names: "Javeed"
     given-names: "Aurya"
+    orcid: "https://orcid.org/0000-0002-8174-5076"
     affiliation: "Sandia National Laboratories"
   - family-names: "Milz"
     given-names: "Johannes"
