@@ -1,9 +1,9 @@
 [![DOI](https://zenodo.org/badge/1298618702.svg)](https://doi.org/10.5281/zenodo.21365487)
 
-# Supplementary material for the manuscript: Statistical Limit Theorems for Optimal Control under Uncertainty
+# Supplementary material for the manuscript: Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty
 
 Simulation code reproducing the two numerical examples of the manuscript
-*Statistical Limit Theorems for Optimal Control under Uncertainty* (Javeed and Milz):
+*Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty* (Javeed and Milz):
 
 - a **fed-batch reactor** under parametric uncertainty ([docs](docs/fed_batch_reactor.md)), and
 - a **fed-batch ethanol fermentation** reactor under parametric uncertainty ([docs](docs/ethanol_fermentation.md)).
