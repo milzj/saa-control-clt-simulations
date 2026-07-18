@@ -1,9 +1,11 @@
 [![DOI](https://zenodo.org/badge/1298618702.svg)](https://doi.org/10.5281/zenodo.21365487)
+[![arXiv](https://img.shields.io/badge/arXiv-2607.14965-b31b1b.svg)](https://arxiv.org/abs/2607.14965)
 
 # Supplementary material for the manuscript: Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty
 
 Simulation code reproducing the two numerical examples of the manuscript
-*Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty* (Javeed and Milz):
+> Aurya Javeed and Johannes Milz, *Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty*,
+> July 16, 2026, https://arxiv.org/abs/2607.14965
 
 - a **fed-batch reactor** under parametric uncertainty ([docs](docs/fed_batch_reactor.md)), and
 - a **fed-batch ethanol fermentation** reactor under parametric uncertainty ([docs](docs/ethanol_fermentation.md)).
