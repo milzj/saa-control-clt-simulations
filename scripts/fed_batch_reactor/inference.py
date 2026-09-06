@@ -7,7 +7,7 @@ fed-batch reactor:
   * subsampling CI (Algorithm 2) -- interval valid for nonunique optimizers.
 
 Both the anchor SAA solves and the subsampling re-solves use Ipopt at the
-inference tolerance (1e-5) on a 50-interval mesh.  Choose which to run with
+configured inference tolerance on a 50-interval mesh.  Choose which to run with
 ``--algorithm {plugin,subsampling,both}`` (default both).  The full-sample
 (size-N) SAA is solved once and reused: it is the largest plug-in sample size
 AND the anchor J_hat_N* / u_hat_N for subsampling.
@@ -72,9 +72,9 @@ def main():
     ub = model.control_bounds[1][0]
 
     def solve(samples, w0=None, inner_serial=False):
-        # anchor SAA solve via Ipopt (single shooting, tol 1e-5); the studies'
-        # solve(samples) -> (saa, w_opt, f_opt) contract. The anchor sweep is
-        # sequential, so w0/inner_serial are unused here.
+        # Anchor SAA solve via Ipopt at the configured inference tolerance; the
+        # studies' solve(samples) -> (saa, w_opt, f_opt) contract. The anchor sweep
+        # is sequential, so w0/inner_serial are unused here.
         saa = ensemblecontrol.SAAProblem(
             model, samples, MultipleShooting=False,
             ipopt_options=ipopt_options(TOL_INFERENCE))
@@ -82,7 +82,7 @@ def main():
         return saa, w_opt, f_opt
 
     # Ipopt subsampling resolver: re-solve each size-b subsample with Ipopt (the
-    # subproblem inherits the anchor's ipopt_options, i.e. tol 1e-5), warm-started
+    # subproblem inherits the anchor's configured ipopt_options, warm-started
     # from the full-sample control clipped strictly interior for the interior-point
     # method. Construction is serialized with the same build lock the default
     # (scipy) resolver uses, so it is safe under the sweep's outer threads.

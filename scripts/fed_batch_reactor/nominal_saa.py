@@ -39,7 +39,7 @@ FORMATS = ("png", "pdf")
 
 
 def solve(model, samples):
-    # Ipopt single-shooting SAA solve at the nominal/SAA tolerance (1e-8).
+    # Ipopt single-shooting SAA solve at the configured nominal/SAA tolerance.
     saa_problem = ensemblecontrol.SAAProblem(
         model, samples, MultipleShooting=False,
         ipopt_options=ipopt_options(TOL_SOLUTION))

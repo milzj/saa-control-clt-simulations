@@ -16,7 +16,7 @@ once and its size-N value uses the first N.
 
 Each SAA solve carries the endpoint volume cap x4(t_f) <= 200
 (terminal_constraints, member 0; x4(t_f) is parameter-independent so this caps the
-whole ensemble).  The solves use Ipopt at the inference tolerance (TOL_INFERENCE = 1e-3)
+whole ensemble).  The solves use Ipopt at the configured inference tolerance
 and warm-start every replicate from the reference solution.  The raw replicate values
 are saved to results/ethanol_fermentation/limit_theorem/<stamp>/clt.json and the
 histograms are rendered from them via ``saa_clt.plot_clt_normal``.
@@ -72,7 +72,7 @@ def main():
     model.nintervals = NINTERVALS   # CLT / inference mesh (coarse control grid)
     # Reproducible i.i.d. scenario root (relative radius r; k5, k6 frozen).
     root = model.scenario_sampler(seed=ROOT_SEED)
-    # Ipopt single-shooting solve at the inference tolerance (TOL_INFERENCE = 1e-3) with
+    # Ipopt single-shooting solve at the configured inference tolerance with
     # the endpoint volume cap. Like make_ipopt_solve but cold-starts (the reference) from a
     # feasible ramp -- the default Ipopt start violates the cap -- and warm-starts each
     # replicate (interior-clipped) from the reference control. Construction is

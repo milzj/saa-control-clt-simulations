@@ -10,7 +10,7 @@ Every SAA solve carries the endpoint volume cap x4(t_f) <= 200
 (terminal_constraints, member 0). Because x4' = u is parameter-independent, x4(t_f)
 is identical across the ensemble, so the cap is position-0 on any (sub)sample and
 needs no index remapping. Both the anchor solves and the subsampling re-solves use
-Ipopt at the inference tolerance (1e-5) on a 50-interval mesh.
+Ipopt at the configured inference tolerance on a 50-interval mesh.
 
 Choose which to run with ``--algorithm {plugin,subsampling,both}`` (default both).
 Each algorithm saves its raw data to JSON, then the figures are rendered from those
@@ -80,8 +80,9 @@ def main():
     ub = model.control_bounds[1][0]
 
     def solve(samples, w0=None, inner_serial=False):
-        # anchor capped SAA solve via Ipopt (single shooting, tol 1e-5), warm-started
-        # from a feasible ramp (the default Ipopt start violates the volume cap).
+        # Anchor capped SAA solve via Ipopt at the configured inference tolerance,
+        # warm-started from a feasible ramp (the default Ipopt start violates the
+        # volume cap).
         saa = _capped_saa(model, samples)
         N = model.nintervals
         ctrl = (project_interior(saa.control_matrix(w0), lb, ub) if w0 is not None
