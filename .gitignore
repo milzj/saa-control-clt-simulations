@@ -4,6 +4,14 @@
 # effect on files that are already tracked.
 /results/*
 !/results/.gitkeep
+!/results/revision/
+/results/revision/*
+!/results/revision/fed-batch-mean-subsampling-width-N32-R30.pdf
+!/results/revision/fed-batch-mean-subsampling-width-N32-R30.png
+!/results/revision/fed-batch-mean-subsampling-width-N64-R30.pdf
+!/results/revision/fed-batch-mean-subsampling-width-N64-R30.png
+!/results/revision/subsampling_width_monte_carlo.json
+!/results/revision/subsampling_width_monte_carlo_summary95.csv
 /logs/*
 !/logs/.gitkeep
 
