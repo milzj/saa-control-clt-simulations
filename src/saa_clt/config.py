@@ -21,6 +21,7 @@ __all__ = [
     "MASTER_SEED",
     "SAA_SAMPLER_SEED", "CLT_ROOT_SEED", "INFERENCE_SEED",
     "INFERENCE_SUBSAMPLE_SEED", "COVERAGE_ROOT_SEED",
+    "SUBSAMPLING_WIDTH_ROOT_SEED",
     "SOLUTION_NINTERVALS", "SAA_SAMPLES", "SAMPLE_SIZES",
     "CLT_N_REF", "CLT_REPLICATIONS", "CLT_NINTERVALS",
     "INFERENCE_NINTERVALS", "CONFIDENCE_LEVELS",
@@ -41,8 +42,8 @@ __all__ = [
 # ---------------------------------------------------------------------------
 MASTER_SEED = 1234
 
-_saa_ss, _clt_ss, _ci_ss, _ci_sub_ss, _cov_ss = \
-    np.random.SeedSequence(MASTER_SEED).spawn(5)
+_saa_ss, _clt_ss, _ci_ss, _ci_sub_ss, _cov_ss, _sub_width_ss = \
+    np.random.SeedSequence(MASTER_SEED).spawn(6)
 
 
 def _seed(seed_sequence):
@@ -55,6 +56,7 @@ CLT_ROOT_SEED            = _seed(_clt_ss)      # CLT root (re-spawned into ref +
 INFERENCE_SEED           = _seed(_ci_ss)       # CI anchor ensemble draw
 INFERENCE_SUBSAMPLE_SEED = _seed(_ci_sub_ss)   # CI subsample index draws (--seed-sub default)
 COVERAGE_ROOT_SEED       = _seed(_cov_ss)      # coverage-study root (independent of CLT/CI)
+SUBSAMPLING_WIDTH_ROOT_SEED = _seed(_sub_width_ss)  # repeated-sample b_N diagnostic
 
 # -- Nominal / risk-neutral (SAA) solution -----------------------------------
 SOLUTION_NINTERVALS = 2000     # fine control mesh for the solution demo

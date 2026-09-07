@@ -35,10 +35,11 @@ def test_config_constants():
         "tol": 1e-3, "hessian_approximation": "limited-memory"}
 
 
-def test_five_independent_seeds():
+def test_six_independent_seeds():
     seeds = {config.SAA_SAMPLER_SEED, config.CLT_ROOT_SEED, config.INFERENCE_SEED,
-             config.INFERENCE_SUBSAMPLE_SEED, config.COVERAGE_ROOT_SEED}
-    assert len(seeds) == 5   # SeedSequence(1234).spawn(5), all distinct
+             config.INFERENCE_SUBSAMPLE_SEED, config.COVERAGE_ROOT_SEED,
+             config.SUBSAMPLING_WIDTH_ROOT_SEED}
+    assert len(seeds) == 6   # SeedSequence(1234).spawn(6), all distinct
 
 
 def test_ensemblecontrol_public_api():

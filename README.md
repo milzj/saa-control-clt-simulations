@@ -98,16 +98,79 @@ The four studies, and the manuscript figure/table each produces, are:
 > `--R`/`--n-ref` flags for a cheaper smoke run, e.g.
 > `scripts/fed_batch_reactor/run_coverage.sh --R 20 --n-ref 128`.
 
-Outputs are written to a new timestamped folder per run, so re-runs never overwrite
-each other:
+### Corrected subsampling figures
+
+The raw subsampling statistics stored with the two archived inference runs are
+sufficient to regenerate every subsampling figure without any optimization solves.
+The replotter evaluates the lower empirical quantiles using the exact rank
+`ceil(m p)`, avoiding an off-by-one rank when a nominal decimal probability lies
+on an order-statistic boundary. Run:
+
+```bash
+python scripts/replot_inference.py --subsampling-only \
+  results/fed_batch_reactor/inference/2026-07-12T21-23-21 \
+  results/ethanol_fermentation/inference/2026-07-12T23-55-36
+```
+
+This command rewrites all PDF and PNG subsampling outputs in each specified
+directory: the per-sample-size histograms and the 90%, 95%, and 99% CI sweeps and
+scaling plots. It leaves the archived JSON data and all plug-in figures unchanged.
+
+### Subsampling-width sensitivity figures
+
+The paper revision also includes a conditional sensitivity study of the nominal
+95% subsampling-confidence-interval width with respect to the subsample size
+$b_N$. It uses $N\in\{32,64\}$, 30 subsampling repetitions, and $m_N=5N$.
+For each $N$, the scenario data and full-sample SAA solution are held fixed; only
+the random subset-index stage is repeated. Within each repetition, the candidate
+$b_N$ values use nested prefixes of the same ordered subsamples, providing common
+random numbers across $b_N$. This is not a coverage experiment.
+
+The complete checkpoint is included in `results/revision`. To regenerate its
+summary CSV and the PDF and PNG figures without running any optimization solves:
+
+```bash
+scripts/fed_batch_reactor/run_subsampling_width_monte_carlo.sh \
+  --resume results/revision/subsampling_width_monte_carlo.json
+```
+
+To rerun the complete experiment with eight workers, choose a new output directory
+under `results/revision`:
+
+```bash
+scripts/fed_batch_reactor/run_subsampling_width_monte_carlo.sh \
+  --R 30 \
+  --sample-sizes 32 64 \
+  --workers 8 \
+  --outdir results/revision/rerun
+```
+
+Use an unused directory name in place of `rerun`; the driver refuses to overwrite
+an existing checkpoint. It checkpoints every completed `(replication, N)` block, so
+an interrupted run can be continued with:
+
+```bash
+scripts/fed_batch_reactor/run_subsampling_width_monte_carlo.sh \
+  --R 30 \
+  --sample-sizes 32 64 \
+  --workers 8 \
+  --resume results/revision/rerun/subsampling_width_monte_carlo.json
+```
+
+The complete experiment performs 57,600 nominal subsample optimization solves plus
+two full-sample anchor solves. The included run took approximately 3 hours 13 minutes
+with eight workers on the hardware described above.
+
+The four core studies write outputs to a new timestamped folder per run, so re-runs
+never overwrite each other:
 
 - `results/<example>/<study>/<stamp>/` — figures, CSVs, JSON, and LaTeX tables;
 - `logs/<example>/<study>_<stamp>.log` — the captured console output and timing.
 
 The runs behind the manuscript are **committed** here, so the reported figures and
-tables can be inspected without re-running anything. New runs land in their own
-`<stamp>` folder and are not tracked (`.gitignore` covers `results/` and `logs/`);
-`git add -f` them to archive a run.
+tables can be inspected without re-running anything. New core-study runs land in
+their own `<stamp>` folder and are not tracked (`.gitignore` covers the general
+`results/` and `logs/` trees); `results/revision` is retained for revision artifacts.
 
 The default sample sizes, seeds, tolerances, and mesh sizes are fixed in
 [`src/saa_clt/config.py`](src/saa_clt/config.py) and reproduce the settings used for the
@@ -118,10 +181,10 @@ manuscript.
 ```
 src/saa_clt/     shared, de-duplicated helpers (run configuration, warm starts,
                  control post-processing, output paths)
-scripts/<ex>/    each example: model.py, config.py, the four study drivers, run_*.sh
+scripts/<ex>/    models, configs, core-study drivers, and the revision driver
 docs/            per-example problem formulations
 test/            fast pytest smoke suite
-results/ logs/   study outputs; the manuscript runs are committed, new runs are not
+results/ logs/   study outputs; committed runs and revision artifacts are retained
 ```
 
 ## Tests
