@@ -15,8 +15,8 @@ NUMBERS across N (the canonical SAA construction): each replicate draws max(N) s
 once and its size-N value uses the first N.
 
 This is a Monte-Carlo study (R solves per N), so it lives in its own script rather than
-in the main demos.  It solves with Ipopt at the inference tolerance (TOL_INFERENCE =
-1e-3), cold-starting every solve -- reference and replicates alike -- from the
+in the main demos.  It solves with Ipopt at the configured inference tolerance,
+cold-starting every solve -- reference and replicates alike -- from the
 control-box midpoint u=(lb+ub)/2, so all solves are the same estimator.  The raw
 replicate values are saved to
 results/fed_batch_reactor/limit_theorem/<stamp>/clt.json and the histograms are rendered
@@ -76,7 +76,7 @@ def main():
     # the control-box midpoint (average of lower and upper bounds) -- so all solves
     # are the same estimator. This removes the cold(reference)/warm(replicate)
     # asymmetry that made the reference land in a different (lower) basin. Single-
-    # shooting Ipopt at the inference tolerance (TOL_INFERENCE = 1e-3); build under the
+    # shooting Ipopt at the configured inference tolerance; build under the
     # lock, solve outside, so it is safe under the study's threads.
     lb = np.asarray(model.control_bounds[0], dtype=float)
     ub = np.asarray(model.control_bounds[1], dtype=float)
