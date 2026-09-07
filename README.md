@@ -98,6 +98,24 @@ The four studies, and the manuscript figure/table each produces, are:
 > `--R`/`--n-ref` flags for a cheaper smoke run, e.g.
 > `scripts/fed_batch_reactor/run_coverage.sh --R 20 --n-ref 128`.
 
+### Corrected subsampling figures
+
+The raw subsampling statistics stored with the two archived inference runs are
+sufficient to regenerate every subsampling figure without any optimization solves.
+The replotter evaluates the lower empirical quantiles using the exact rank
+`ceil(m p)`, avoiding an off-by-one rank when a nominal decimal probability lies
+on an order-statistic boundary. Run:
+
+```bash
+python scripts/replot_inference.py --subsampling-only \
+  results/fed_batch_reactor/inference/2026-07-12T21-23-21 \
+  results/ethanol_fermentation/inference/2026-07-12T23-55-36
+```
+
+This command rewrites all PDF and PNG subsampling outputs in each specified
+directory: the per-sample-size histograms and the 90%, 95%, and 99% CI sweeps and
+scaling plots. It leaves the archived JSON data and all plug-in figures unchanged.
+
 ### Subsampling-width sensitivity figures
 
 The paper revision also includes a conditional sensitivity study of the nominal

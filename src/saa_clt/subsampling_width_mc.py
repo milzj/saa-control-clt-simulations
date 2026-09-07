@@ -10,6 +10,7 @@ quantiles, JSON checkpointing, tabulation, and the approved paper figures.
 from __future__ import annotations
 
 import csv
+from fractions import Fraction
 import json
 import math
 import os
@@ -39,6 +40,7 @@ __all__ = [
     "save_width_run",
     "save_width_summary",
     "subsample_size_grid",
+    "subsampling_cis_from_deltas",
     "subsampling_interval_from_deltas",
     "summarize_widths",
 ]
@@ -72,26 +74,52 @@ def subsample_size_grid(N: int, point_count: int = DEFAULT_GRID_SIZE) -> list[in
     return sorted({b for b in proposed if 1 <= b < N})
 
 
-def empirical_quantile_rank(m: int, probability: float) -> int:
-    """Return the one-based rank ``ceil(m p)``, robust near integer ranks."""
+def _as_probability_fraction(probability: float | str | Fraction) -> Fraction:
+    """Represent a user-facing decimal probability exactly."""
+    try:
+        value = (
+            probability
+            if isinstance(probability, Fraction)
+            else Fraction(str(probability))
+        )
+    except (ValueError, ZeroDivisionError) as error:
+        raise ValueError("probability must be numeric") from error
+    if not Fraction(0) <= value <= Fraction(1):
+        raise ValueError("probability must lie in [0, 1]")
+    return value
+
+
+def empirical_quantile_rank(
+    m: int, probability: float | str | Fraction
+) -> int:
+    """Return the exact one-based lower-quantile rank ``ceil(m p)``."""
     m = int(m)
-    probability = float(probability)
     if m < 1:
         raise ValueError("m must be positive")
-    if not 0.0 <= probability <= 1.0:
-        raise ValueError("probability must lie in [0, 1]")
+    if isinstance(probability, (float, np.floating)):
+        probability_value = float(probability)
+        if (
+            not math.isfinite(probability_value)
+            or not 0.0 <= probability_value <= 1.0
+        ):
+            raise ValueError("probability must lie in [0, 1]")
+        raw_rank = m * probability_value
+        nearest = round(raw_rank)
+        tolerance = 16.0 * np.finfo(float).eps * max(1.0, abs(raw_rank))
+        if abs(raw_rank - nearest) <= tolerance:
+            raw_rank = float(nearest)
+        rank = int(math.ceil(raw_rank))
+        return min(max(rank, 1), m)
 
-    raw_rank = m * probability
-    nearest = round(raw_rank)
-    tolerance = 16.0 * np.finfo(float).eps * max(1.0, abs(raw_rank))
-    if abs(raw_rank - nearest) <= tolerance:
-        raw_rank = float(nearest)
-    rank = int(math.ceil(raw_rank))
+    probability_fraction = _as_probability_fraction(probability)
+    numerator = m * probability_fraction.numerator
+    denominator = probability_fraction.denominator
+    rank = (numerator + denominator - 1) // denominator
     return min(max(rank, 1), m)
 
 
 def lower_empirical_quantile(
-    values: Sequence[float], probability: float
+    values: Sequence[float], probability: float | str | Fraction
 ) -> float:
     """Return the order statistic with one-based rank ``ceil(m p)``."""
     ordered = np.sort(np.asarray(values, dtype=float))
@@ -101,14 +129,18 @@ def lower_empirical_quantile(
 
 
 def subsampling_interval_from_deltas(
-    deltas: Sequence[float], f_opt: float, N: int, level: float = 0.95
+    deltas: Sequence[float],
+    f_opt: float,
+    N: int,
+    level: float | str | Fraction = 0.95,
 ) -> dict[str, float | int]:
     """Compute the root-inverted subsampling interval from stored statistics."""
     N = int(N)
-    level = float(level)
+    level_fraction = _as_probability_fraction(level)
+    level_value = float(level_fraction)
     if N < 1:
         raise ValueError("N must be positive")
-    if not 0.0 < level < 1.0:
+    if not Fraction(0) < level_fraction < Fraction(1):
         raise ValueError("level must lie strictly between zero and one")
 
     values = np.asarray(deltas, dtype=float)
@@ -117,9 +149,9 @@ def subsampling_interval_from_deltas(
     if not np.all(np.isfinite(values)):
         raise ValueError("deltas must contain only finite values")
 
-    beta = 1.0 - level
-    p_lo = beta / 2.0
-    p_hi = 1.0 - beta / 2.0
+    beta = 1 - level_fraction
+    p_lo = beta / 2
+    p_hi = 1 - beta / 2
     q_lo = lower_empirical_quantile(values, p_lo)
     q_hi = lower_empirical_quantile(values, p_hi)
     center = float(np.asarray(f_opt).squeeze())
@@ -130,7 +162,7 @@ def subsampling_interval_from_deltas(
     return {
         "N": N,
         "m": int(values.size),
-        "level": level,
+        "level": level_value,
         "rank_lo": empirical_quantile_rank(values.size, p_lo),
         "rank_hi": empirical_quantile_rank(values.size, p_hi),
         "quantile_lo": q_lo,
@@ -138,6 +170,41 @@ def subsampling_interval_from_deltas(
         "lo": lo,
         "hi": hi,
         "width": hi - lo,
+    }
+
+
+def subsampling_cis_from_deltas(
+    deltas: Sequence[float],
+    f_opt: float,
+    N: int,
+    levels: Sequence[float | str | Fraction] = (0.90, 0.95, 0.99),
+) -> dict:
+    """Return exact-rank subsampling CIs in EnsembleControl's plot schema."""
+    level_fractions = tuple(_as_probability_fraction(level) for level in levels)
+    if not level_fractions:
+        raise ValueError("levels must be nonempty")
+    level_values = tuple(float(level) for level in level_fractions)
+
+    intervals = [
+        subsampling_interval_from_deltas(deltas, f_opt, N, level)
+        for level in level_fractions
+    ]
+    center = float(np.asarray(f_opt).squeeze())
+    return {
+        "N": int(N),
+        "Jhat": center,
+        "m": int(np.asarray(deltas).size),
+        "levels": {
+            level: {
+                "quantile_lo": interval["quantile_lo"],
+                "quantile_hi": interval["quantile_hi"],
+                "rank_lo": interval["rank_lo"],
+                "rank_hi": interval["rank_hi"],
+                "lo": interval["lo"],
+                "hi": interval["hi"],
+            }
+            for level, interval in zip(level_values, intervals)
+        },
     }
 
 

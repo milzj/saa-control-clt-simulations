@@ -12,16 +12,24 @@ all come from the saved run, so one driver covers every example.
 Usage (from the repo root):
     python scripts/replot_inference.py                  # every saved run
     python scripts/replot_inference.py <run_dir> ...    # specific run folders
+    python scripts/replot_inference.py --subsampling-only <run_dir> ...
     python scripts/replot_inference.py --dry-run        # list, write nothing
 """
 
 import argparse
+from contextlib import contextmanager
 import glob
+import importlib
 import os
+
+import matplotlib
+
+matplotlib.use("Agg")
 
 import ensemblecontrol
 
 from saa_clt.outputs import repo_root
+from saa_clt.subsampling_width_mc import subsampling_cis_from_deltas
 
 # Every figure is saved in both of these formats (matches the inference drivers).
 FORMATS = ("png", "pdf")
@@ -52,11 +60,28 @@ def _plugin_cis(run):
 
 def _subsampling_cis(run):
     levels = tuple(run["levels"])
-    return [ensemblecontrol.subsampling_ci_from_deltas(
+    return [subsampling_cis_from_deltas(
         rec["deltas"], rec["f_opt"], rec["N"], levels) for rec in run["results"]]
 
 
-def replot(run_dir, dry_run=False):
+@contextmanager
+def _exact_subsampling_plotter():
+    """Temporarily give EnsembleControl's plotter the exact-rank CI helper."""
+    plotting = importlib.import_module("ensemblecontrol.inference_plotting")
+    original = plotting.subsampling_ci_from_deltas
+    plotting.subsampling_ci_from_deltas = subsampling_cis_from_deltas
+    try:
+        yield
+    finally:
+        plotting.subsampling_ci_from_deltas = original
+
+
+def _plot_subsampling(*args, **kwargs):
+    with _exact_subsampling_plotter():
+        return ensemblecontrol.plot_subsampling(*args, **kwargs)
+
+
+def replot(run_dir, dry_run=False, subsampling_only=False):
     """Re-render whichever algorithms the run folder holds, overwriting in place.
 
     The folder name IS the run stamp (figures are ``<prefix>_<stamp>_...``), so it is
@@ -82,9 +107,24 @@ def replot(run_dir, dry_run=False):
     have = [n for n, run in ((PLUGIN_JSON, plugin_run), (SUB_JSON, sub_run))
             if run is not None]
     if dry_run:
-        print("[replot] would re-render %s from %s (stamp %s)"
-              % (run_dir, " + ".join(have), stamp))
+        suffix = " (subsampling figures only)" if subsampling_only else ""
+        print("[replot] would re-render %s from %s (stamp %s)%s"
+              % (run_dir, " + ".join(have), stamp, suffix))
         return []
+
+    if subsampling_only:
+        if sub_run is None:
+            raise ValueError("--subsampling-only requires a subsampling.json file")
+        written = _plot_subsampling(
+            sub_run,
+            outdir=run_dir,
+            stamp=stamp,
+            value_ylim=value_ylim,
+            formats=FORMATS,
+        )
+        print("[replot] %s: re-rendered %d subsampling figures from %s"
+              % (run_dir, len(written), SUB_JSON))
+        return written
 
     written = []
     if plugin_run is not None:
@@ -92,7 +132,7 @@ def replot(run_dir, dry_run=False):
             plugin_run, outdir=run_dir, stamp=stamp, value_ylim=value_ylim,
             formats=FORMATS)
     if sub_run is not None:
-        written += ensemblecontrol.plot_subsampling(
+        written += _plot_subsampling(
             sub_run, outdir=run_dir, stamp=stamp, value_ylim=value_ylim,
             formats=FORMATS)
     print("[replot] %s: re-rendered %d figures from %s"
@@ -106,6 +146,11 @@ def main():
                         help="run folders to re-render; default every saved run")
     parser.add_argument("--dry-run", action="store_true",
                         help="list what would be re-rendered, write nothing")
+    parser.add_argument(
+        "--subsampling-only",
+        action="store_true",
+        help="rewrite only the PDF/PNG subsampling figures",
+    )
     args = parser.parse_args()
 
     run_dirs = args.run_dirs or find_run_dirs()
@@ -114,7 +159,11 @@ def main():
     for run_dir in run_dirs:
         if not os.path.isdir(run_dir):
             parser.error("not a directory: %s" % run_dir)
-        replot(run_dir, dry_run=args.dry_run)
+        replot(
+            run_dir,
+            dry_run=args.dry_run,
+            subsampling_only=args.subsampling_only,
+        )
 
 
 if __name__ == "__main__":

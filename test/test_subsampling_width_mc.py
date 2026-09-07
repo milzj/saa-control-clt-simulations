@@ -1,5 +1,6 @@
 import json
 import math
+from fractions import Fraction
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -15,6 +16,7 @@ from saa_clt.subsampling_width_mc import (
     save_width_run,
     save_width_summary,
     subsample_size_grid,
+    subsampling_cis_from_deltas,
     subsampling_interval_from_deltas,
     summarize_widths,
 )
@@ -103,6 +105,17 @@ def test_empirical_rank_snaps_floating_point_near_integer():
     assert empirical_quantile_rank(10, 0.21) == 3
 
 
+def test_empirical_rank_uses_exact_decimal_probabilities():
+    assert [
+        empirical_quantile_rank(m, Fraction(1, 40))
+        for m in (40, 80, 160, 320)
+    ] == [1, 2, 4, 8]
+    assert [
+        empirical_quantile_rank(m, Fraction(39, 40))
+        for m in (40, 80, 160, 320)
+    ] == [39, 78, 156, 312]
+
+
 def test_interval_uses_manuscript_lower_empirical_quantiles():
     deltas = np.arange(1.0, 41.0)
     interval = subsampling_interval_from_deltas(
@@ -114,6 +127,18 @@ def test_interval_uses_manuscript_lower_empirical_quantiles():
     assert interval["quantile_hi"] == 39.0
     assert interval["lo"] == 10.0 - 39.0 / 2.0
     assert interval["hi"] == 10.0 - 1.0 / 2.0
+
+    compatible = subsampling_cis_from_deltas(
+        deltas, f_opt=10.0, N=4, levels=("0.95",)
+    )
+    assert compatible["levels"][0.95]["rank_lo"] == 1
+    assert compatible["levels"][0.95]["rank_hi"] == 39
+
+    rational_level = subsampling_cis_from_deltas(
+        np.arange(1.0, 4.0), f_opt=10.0, N=4, levels=(Fraction(1, 3),)
+    )
+    assert rational_level["levels"][float(Fraction(1, 3))]["rank_lo"] == 1
+    assert rational_level["levels"][float(Fraction(1, 3))]["rank_hi"] == 2
 
 
 def test_nested_draws_and_duplicate_subset_cache():
