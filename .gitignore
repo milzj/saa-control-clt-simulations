@@ -12,6 +12,9 @@
 !/results/revision/fed-batch-mean-subsampling-width-N64-R30.png
 !/results/revision/subsampling_width_monte_carlo.json
 !/results/revision/subsampling_width_monte_carlo_summary95.csv
+!/results/revision/coverage_replications.json
+!/results/revision/coverage_plugin.tex
+!/results/revision/coverage_plugin_t.tex
 /logs/*
 !/logs/.gitkeep
 
