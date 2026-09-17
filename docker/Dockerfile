@@ -20,7 +20,7 @@ WORKDIR /repo
 RUN git clone --branch ${REPO_BRANCH} --single-branch \
         https://github.com/milzj/saa-control-clt-simulations.git && \
     cd saa-control-clt-simulations && \
-    python3 -m pip install --no-cache-dir . && \
+    python3 -m pip install --no-cache-dir --retries 10 --timeout 120 . && \
     rm -rf /tmp
 
 WORKDIR /repo/saa-control-clt-simulations
