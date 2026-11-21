@@ -61,8 +61,9 @@ python scripts/reproduce.py --resume
 
 ### Manuscript results
 
-The `results/manuscript/` subfolder contains the paper's EPS figure panels and
-LaTeX coverage table bodies. Generate it from the saved results with one command.
+The [manuscript results](results/manuscript/) contain the paper's EPS figure
+panels and LaTeX coverage table bodies. Regenerate the files from the saved
+results with one command.
 
 ```bash
 python scripts/prepare_manuscript.py
