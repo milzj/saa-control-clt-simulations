@@ -4,7 +4,7 @@ reactor SAA optimal value.
 A (1 - beta) confidence interval for the SAA optimal value is meant to cover the
 population optimal J* with probability 1 - beta.  J* is not computable, so we proxy
 it by J_hat_ref*, the SAA value on one large independent reference sample of size
-N_ref.  For each N in COVERAGE_SAMPLE_SIZES we run R replications -- with COMMON RANDOM NUMBERS
+N_ref.  For each selected sample size N we run R replications -- with COMMON RANDOM NUMBERS
 across N (each replicate draws max(N) scenarios once and its size-N CI uses the first
 N; the reference sample stays independent) -- build the plug-in CI on each, and count
 the L that cover J_hat_ref*.  The empirical coverage is L/R; the estimator
@@ -23,6 +23,7 @@ per-replication CI endpoints are additionally saved to coverage_plugin_intervals
 
 Usage (from the repo root; MPLBACKEND=Agg on headless machines):
     python scripts/fed_batch_reactor/coverage.py
+    ... --sample-sizes 8 16 32 64 128 --R 10000
     ... --R 100 --n-ref 512          # cheaper smoke run
 """
 
@@ -44,6 +45,8 @@ from config import (COVERAGE_SAMPLE_SIZES, COVERAGE_ROOT_SEED, COVERAGE_REPLICAT
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--sample-sizes", type=int, nargs="+", default=COVERAGE_SAMPLE_SIZES,
+                    help="training sample sizes N (default: %(default)s)")
     ap.add_argument("--R", type=int, default=COVERAGE_REPLICATIONS,
                     help="plug-in replications per N (1 solve each; default %d)"
                          % COVERAGE_REPLICATIONS)
@@ -59,6 +62,9 @@ def main():
                          "pass an integer, 1 (sequential inner-threaded), or 'auto'."
                          % core_budget())
     args = ap.parse_args()
+    sample_sizes = sorted(set(args.sample_sizes))
+    if sample_sizes[0] < 1:
+        ap.error("--sample-sizes must be positive")
     args.deltas = tuple(float(d) for d in args.deltas.split(","))
 
     # One timestamped run folder per study: output/coverage/<stamp>/ (matches the
@@ -105,13 +111,12 @@ def main():
         return out
 
     print("[plugin] coverage study: sizes=%s, R=%d, workers=%s (%d replicate solves)"
-          % (list(COVERAGE_SAMPLE_SIZES), args.R, args.workers,
-             args.R * len(COVERAGE_SAMPLE_SIZES)),
+          % (sample_sizes, args.R, args.workers, args.R * len(sample_sizes)),
           flush=True)
 
     # ci_of=None -> the default plug-in CI (one extra rollout, no re-solve).
     study = ensemblecontrol.coverage_study(
-        root, solve, sample_sizes=COVERAGE_SAMPLE_SIZES, R=args.R, n_ref=args.n_ref,
+        root, solve, sample_sizes=sample_sizes, R=args.R, n_ref=args.n_ref,
         levels=COVERAGE_LEVELS, warm_start=False, workers=args.workers,
         progress=progress, ref_solve=ref_solve)
 

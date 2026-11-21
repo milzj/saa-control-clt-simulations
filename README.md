@@ -1,250 +1,170 @@
 [![DOI](https://zenodo.org/badge/1298618702.svg)](https://doi.org/10.5281/zenodo.21365487)
 [![arXiv](https://img.shields.io/badge/arXiv-2607.14965-b31b1b.svg)](https://arxiv.org/abs/2607.14965)
 
-# Supplementary material for the manuscript: Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty
+# Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty
 
 Simulation code reproducing the two numerical examples of the manuscript
+
 > Aurya Javeed and Johannes Milz, *Statistical Inference for Scenario-Based Dynamic Optimization under Uncertainty*,
 > July 16, 2026, https://arxiv.org/abs/2607.14965
 
-- a **fed-batch reactor** under parametric uncertainty ([docs](docs/fed_batch_reactor.md)), and
-- a **fed-batch ethanol fermentation** reactor under parametric uncertainty ([docs](docs/ethanol_fermentation.md)).
+The model equations and numerical settings for each example are documented below.
 
-For each example the code computes, for the sample-average-approximation (SAA) optimal
-value: the nominal and risk-neutral (SAA) solutions, a central-limit-theorem study, the
-plug-in and subsampling confidence intervals, and a plug-in coverage study.
-
-The numerical routines come from the external package
-[EnsembleControl](https://github.com/milzj/EnsembleControl); this repository pins the
-exact release **v0.0.4** archived on Zenodo
-([doi:10.5281/zenodo.21328270](https://doi.org/10.5281/zenodo.21328270)), which
-`pip install` resolves automatically from the pinned archive URL in
-[`pyproject.toml`](pyproject.toml).
-
-## Requirements
-
-- **Operating system:** Linux or macOS.
-- **Python:** 3.10 or newer.
-- **Hardware:** the results were produced on a laptop with an **Apple M4 chip and
-  16 GB of RAM**. No GPU is required.
-- All Python dependencies (`numpy`, `scipy`, `casadi`, `matplotlib`, `pandas`, and
-  `ensemblecontrol`) are declared in `pyproject.toml` and installed by the commands
-  below. IPOPT ships inside the `casadi` wheel; no separate solver install is needed.
+- [Fed-batch reactor](docs/fed_batch_reactor.md)
+- [Fed-batch ethanol fermentation](docs/ethanol_fermentation.md)
 
 ## Installation
 
-Create a virtual environment inside the repository and install the package (which
-pulls in every dependency, including the pinned EnsembleControl archive):
+Use Python 3.14 on Linux or macOS for the versions pinned in
+[`requirements.txt`](requirements.txt). The reported runs used an Apple M4
+laptop with 16 GB of RAM. The dependencies include EnsembleControl
+[v0.0.4](https://doi.org/10.5281/zenodo.21328270) and CasADi with IPOPT.
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate            # Windows: .venv\Scripts\activate
-pip install .                        # add [test] for the smoke tests: pip install -e ".[test]"
-```
-
-### Using [uv](https://docs.astral.sh/uv/)
-
-The same works with uv:
-
-```bash
-uv venv
+python3.14 -m venv .venv
 source .venv/bin/activate
-uv pip install .                     # or: uv pip install -e ".[test]"
+python -m pip install -r requirements.txt
+python -m pip install --no-deps .
 ```
 
-The run scripts prefer the repository's `.venv/bin/python`, so once `.venv` exists you
-can run the studies without activating it; activating it also works.
-
-### Updating the pinned requirements
-
-[`requirements.txt`](requirements.txt) is a pip-compiled lock file generated from
-[`pyproject.toml`](pyproject.toml). After changing anything under `src/` or
-`pyproject.toml`, regenerate it so the pinned versions stay in sync:
-
-```bash
-pip install pip-tools            # provides pip-compile
-pip-compile --output-file=requirements.txt pyproject.toml
-```
+A [Dockerfile](docker/Dockerfile) is available for container runs.
 
 ## Reproducing the results
 
-Each example exposes the four studies as separate, independently runnable Python files
-under `scripts/<example>/`, each wrapped by a shell script that times it and captures
-stdout **and** stderr to a log file:
+Run the commands below from the repository root with the environment active.
+The saved results are under [`results/`](results/). Study wrappers write new
+runs to timestamped directories under `results/<example>/` and record output
+and timings under `logs/<example>/`. Shared settings are in
+[`src/saa_clt/config.py`](src/saa_clt/config.py).
+
+### Full replication
+
+In a local checkout, remove or move aside `results/` before starting a fresh
+replication. With Poppler's `pdftocairo` installed for EPS export, the following
+command reruns both examples, the coverage studies, and the Figure 4 experiment.
 
 ```bash
-# Run everything for one example (all four studies, in order):
-scripts/fed_batch_reactor/run_all.sh
-scripts/ethanol_fermentation/run_all.sh
-
-# ... or run a single study on its own, e.g.:
-scripts/fed_batch_reactor/run_clt.sh
-scripts/ethanol_fermentation/run_inference.sh
-scripts/fed_batch_reactor/run_coverage.sh
-scripts/ethanol_fermentation/run_coverage.sh
+python scripts/reproduce.py
 ```
 
-The four studies, and the manuscript figure/table each produces, are:
+The script writes study outputs to `results/`, logs to `logs/`, and the numbered
+EPS panels and LaTeX tables to `results/manuscript/`. Allow about 21 hours of
+uninterrupted runtime on the Apple M4 setup above. Compare the regenerated plots
+with the [archived results on GitHub](https://github.com/milzj/saa-control-clt-simulations/tree/main/results).
 
-| Script (`run_*.sh` / `*.py`) | Study | Produces |
-| --- | --- | --- |
-| `nominal_saa` | Nominal + risk-neutral (SAA) solution | postprocessed control/state figures |
-| `clt`         | Central-limit-theorem study | scaled-error histograms (per `N`: the fitted normal and the theory curve `N(0, sigma^2)` overlaid, then each alone) + optimization-bias figure + the reference solve (`clt_reference.json`) |
-| `inference`   | Plug-in (Algorithm 1) + subsampling (Algorithm 2) CIs | confidence-interval figures |
-| `coverage`    | Plug-in coverage study | coverage LaTeX table (`coverage_plugin.tex`) |
-
-> **Warning — the coverage study is slow.** `run_coverage.sh` (and hence `run_all.sh`)
-> solves hundreds of SAA problems per sample size and can take a long time. Use the
-> `--R`/`--n-ref` flags for a cheaper smoke run, e.g.
-> `scripts/fed_batch_reactor/run_coverage.sh --R 20 --n-ref 128`.
-
-### Corrected subsampling figures
-
-The raw subsampling statistics stored with the two archived inference runs are
-sufficient to regenerate every subsampling figure without any optimization solves.
-The replotter evaluates the lower empirical quantiles using the exact rank
-`ceil(m p)`, avoiding an off-by-one rank when a nominal decimal probability lies
-on an order-statistic boundary. Run:
+To continue an interrupted run, use `--resume` to reuse completed studies and
+the Figure 4 checkpoint.
 
 ```bash
-python scripts/replot_inference.py --subsampling-only \
-  results/fed_batch_reactor/inference/2026-07-12T21-23-21 \
+python scripts/reproduce.py --resume
+```
+
+### Manuscript results
+
+The [manuscript results](results/manuscript/) contain the paper's EPS figure
+panels and LaTeX coverage table bodies. Regenerate the files from the saved
+results with one command.
+
+```bash
+python scripts/prepare_manuscript.py
+```
+
+Files are named by figure panel or table number, such as `figure3a.eps` and
+`tableD4.tex`. Use the EPS files with `\includegraphics` and the table bodies
+(`table1.tex`, `table2.tex`, `tableD3.tex`, and `tableD4.tex`) with `\input`
+inside the corresponding table floats. For pdfLaTeX, use a TeX installation
+with `epstopdf` available for EPS conversion.
+
+### Optimal controls and sampling studies
+
+```bash
+for example in fed_batch_reactor ethanol_fermentation; do
+  scripts/$example/run_nominal_saa.sh  # Figures 1 and 5
+  scripts/$example/run_clt.sh          # Figures 2 and 6
+  scripts/$example/run_inference.sh    # Data for Figures 3 and 7
+done
+```
+
+### Confidence intervals with reference lines (Figures 3 and 7)
+
+Add the reference values from the saved CLT runs to the confidence intervals
+from the saved inference runs. These commands use the stored data directly.
+
+```bash
+python scripts/replot_inference.py --reference \
+  results/fed_batch_reactor/limit_theorem/2026-07-14T15-00-00/clt_reference.json \
+  results/fed_batch_reactor/inference/2026-07-12T21-23-21
+
+python scripts/replot_inference.py --reference \
+  results/ethanol_fermentation/limit_theorem/2026-07-14T15-16-22/clt_reference.json \
   results/ethanol_fermentation/inference/2026-07-12T23-55-36
 ```
 
-This command rewrites all PDF and PNG subsampling outputs in each specified
-directory: the per-sample-size histograms and the 90%, 95%, and 99% CI sweeps and
-scaling plots. It leaves the archived JSON data and all plug-in figures unchanged.
+The `ci95_reference` outputs show the 95% intervals used in the manuscript.
+The manuscript panels are available as [PDF and EPS files](results/revision/figures/).
 
-### Subsampling-width sensitivity figures
+### Subsampling interval widths (Figure 4)
 
-The paper revision also includes a conditional sensitivity study of the nominal
-95% subsampling-confidence-interval width with respect to the subsample size
-$b_N$. It uses $N\in\{32,64\}$, 30 subsampling repetitions, and $m_N=5N$.
-For each $N$, the scenario data and full-sample SAA solution are held fixed; only
-the random subset-index stage is repeated. Within each repetition, the candidate
-$b_N$ values use nested prefixes of the same ordered subsamples, providing common
-random numbers across $b_N$. This is not a coverage experiment.
-
-The complete checkpoint is included in `results/revision`. To regenerate its
-summary CSV and the PDF and PNG figures without running any optimization solves:
+Regenerate the plots from the saved subsampling results for `N=32,64` and
+`R=30`.
 
 ```bash
 scripts/fed_batch_reactor/run_subsampling_width_monte_carlo.sh \
   --resume results/revision/subsampling_width_monte_carlo.json
 ```
 
-To rerun the complete experiment with eight workers, choose a new output directory
-under `results/revision`:
+Use a new output directory to rerun the experiment.
 
 ```bash
 scripts/fed_batch_reactor/run_subsampling_width_monte_carlo.sh \
-  --R 30 \
-  --sample-sizes 32 64 \
-  --workers 8 \
-  --outdir results/revision/rerun
+  --sample-sizes 32 64 --R 30 --workers 8 --outdir results/revision/width-rerun
 ```
 
-Use an unused directory name in place of `rerun`; the driver refuses to overwrite
-an existing checkpoint. It checkpoints every completed `(replication, N)` block, so
-an interrupted run can be continued with:
+### Coverage tables (Tables 1, 2, D.3, and D.4)
 
-```bash
-scripts/fed_batch_reactor/run_subsampling_width_monte_carlo.sh \
-  --R 30 \
-  --sample-sizes 32 64 \
-  --workers 8 \
-  --resume results/revision/rerun/subsampling_width_monte_carlo.json
-```
+| Example | Sample sizes | Replications per size | Saved results |
+| --- | --- | --- | --- |
+| Fed-batch reactor | 8, 16, 32, 64, 128 | 10,000 | [`results/revision/`](results/revision/) |
+| Ethanol fermentation | 32, 64 | 1,000 | [`results/revision/ethanol_coverage/`](results/revision/ethanol_coverage/) |
 
-The complete experiment performs 57,600 nominal subsample optimization solves plus
-two full-sample anchor solves. The included run took approximately 3 hours 13 minutes
-with eight workers on the hardware described above.
-
-### Normal and Student-t coverage tables
-
-The coverage revision extends the normal plug-in table to $N=128$ and provides
-a separate Student-t table for Appendix D. Both use $N=8,16,32,64,128$,
-$R=10000$, nominal levels 0.90, 0.95, and 0.99, and the original single
-$N_{\mathrm{ref}}=4096$ reference value, $-32.09682940481349$.
-
-Regenerate both tables without running optimization solves:
+Regenerate the normal and Student-`t` coverage tables for both examples
+from the saved replications.
 
 ```bash
 scripts/fed_batch_reactor/run_coverage_tables.sh
+scripts/fed_batch_reactor/run_coverage_tables.sh --example ethanol-fermentation
 ```
 
-The input `results/revision/coverage_replications.json` contains the stored SAA
-optimal values and standard errors for all 50,000 replications. Its first four
-sample sizes reproduce the July archive; the additional 10,000 results at
-$N=128$ use the original seed stream and reference. Source hashes and the
-standard-error convention are recorded in the input metadata. The command writes
-`results/revision/coverage_plugin.tex` and `results/revision/coverage_plugin_t.tex`.
-Use `--outdir <directory>` to write a separate copy for review.
+The commands write `coverage_plugin.tex` and `coverage_plugin_t.tex` to each
+example's results directory. Use `--outdir` to write the tables elsewhere.
+Each coverage study uses an independent reference sample of size 4096.
 
-The normal interval uses the stored standard error $\widehat\sigma_N/\sqrt N$,
-with variance denominator $N$. The Student-t variant multiplies that error by
-$\sqrt{N/(N-1)}$ and uses $N-1$ degrees of freedom. This adjustment does not
-establish exact finite-sample coverage at a data-dependent optimizer. Both tables
-report empirical coverage and the same exact one-sided binomial lower bound at
-confidence $1-10^{-6}$, rounded to three decimals. No simulations or figures are
-generated by this command. The existing normal-interval figures retain their
-original definition. No dependency or scientific-setting changes are required.
+To rerun the ethanol coverage simulations, use the paper's settings.
 
-The four core studies write outputs to a new timestamped folder per run, so re-runs
-never overwrite each other:
-
-- `results/<example>/<study>/<stamp>/` — figures, CSVs, JSON, and LaTeX tables;
-- `logs/<example>/<study>_<stamp>.log` — the captured console output and timing.
-
-The runs behind the manuscript are **committed** here, so the reported figures and
-tables can be inspected without re-running anything. New core-study runs land in
-their own `<stamp>` folder and are not tracked (`.gitignore` covers the general
-`results/` and `logs/` trees); `results/revision` is retained for revision artifacts.
-
-The default sample sizes, seeds, tolerances, and mesh sizes are fixed in
-[`src/saa_clt/config.py`](src/saa_clt/config.py) and reproduce the settings used for the
-manuscript.
-
-## Repository layout
-
+```bash
+scripts/ethanol_fermentation/run_coverage.sh \
+  --sample-sizes 32 64 --R 1000 --n-ref 4096 --workers auto
 ```
-src/saa_clt/     shared, de-duplicated helpers (run configuration, warm starts,
-                 control post-processing, output paths)
-scripts/<ex>/    models, configs, core-study drivers, and the revision driver
-docs/            per-example problem formulations
-test/            fast pytest smoke suite
-results/ logs/   study outputs; committed runs and revision artifacts are retained
+
+To rerun the fed-batch coverage simulations at all five sample sizes, use
+the following command.
+
+```bash
+scripts/fed_batch_reactor/run_coverage.sh \
+  --sample-sizes 8 16 32 64 128 --R 10000 --n-ref 4096
 ```
+
+For a short coverage run, reduce `--R` and `--n-ref`. The completed ethanol run includes its
+[console log](results/revision/ethanol_coverage/coverage.log.gz).
 
 ## Tests
 
 ```bash
-pip install -e ".[test]"
+python -m pip install -e ".[test]"
 pytest -q
 ```
 
-The smoke suite exercises the whole pipeline on tiny problem sizes (it checks that the
-models simulate and each study runs end-to-end and writes well-formed output); it does
-not assert the full-precision numerical results.
+## Citation and license
 
-## Docker
-
-A container image with the code and all dependencies preinstalled is published to the
-GitHub Container Registry on each version tag (see `docker/Dockerfile` and the
-`Create and publish a Docker image` workflow):
-
-```bash
-docker pull ghcr.io/milzj/saa-control-clt-simulations:latest
-docker run --rm -it ghcr.io/milzj/saa-control-clt-simulations
-# inside the container, e.g.:
-scripts/fed_batch_reactor/run_clt.sh
-```
-
-## Citation
-
-If you use this code, please cite it using the metadata in [`CITATION.cff`](CITATION.cff).
-
-## License
-
-[MIT](LICENSE).
+Use the citation in [`CITATION.cff`](CITATION.cff). The code is distributed
+under the [MIT License](LICENSE).

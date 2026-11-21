@@ -4,6 +4,10 @@
 # effect on files that are already tracked.
 /results/*
 !/results/.gitkeep
+!/results/manuscript/
+/results/manuscript/*
+!/results/manuscript/*.eps
+!/results/manuscript/*.tex
 !/results/revision/
 /results/revision/*
 !/results/revision/fed-batch-mean-subsampling-width-N32-R30.pdf
@@ -15,6 +19,8 @@
 !/results/revision/coverage_replications.json
 !/results/revision/coverage_plugin.tex
 !/results/revision/coverage_plugin_t.tex
+!/results/revision/figures/
+!/results/revision/ethanol_coverage/
 /logs/*
 !/logs/.gitkeep
 
