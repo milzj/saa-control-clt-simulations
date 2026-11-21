@@ -32,6 +32,8 @@ import ensemblecontrol
 import matplotlib.pyplot as plt
 from ensemblecontrol.inference_plotting import configure_style
 from matplotlib.axes import Axes
+from matplotlib.container import ErrorbarContainer
+from matplotlib.lines import Line2D
 
 from saa_clt.outputs import repo_root
 from saa_clt.subsampling_width_mc import subsampling_cis_from_deltas
@@ -105,10 +107,17 @@ def _plot_reference_sweeps(runs, run_dir, stamp, value_ylim, reference_value):
                 original_legend = ax.get_legend()
                 original_labels = [text.get_text() for text in original_legend.get_texts()]
                 data_handles, _ = ax.get_legend_handles_labels()
+                estimate = data_handles[0]
+                if isinstance(estimate, ErrorbarContainer):
+                    estimate = estimate.lines[0]
+                estimate_dot = Line2D(
+                    [], [], marker="o", linestyle="none", color=estimate.get_color(),
+                    markersize=estimate.get_markersize(),
+                )
                 reference_line = ax.axhline(reference_value, color="tab:brown",
                                             ls="--", lw=1.6, zorder=1)
                 legend = ax.legend(
-                    [data_handles[0], reference_line] + original_legend.legend_handles[1:],
+                    [estimate_dot, reference_line] + original_legend.legend_handles[1:],
                     [original_labels[0], reference_label] + original_labels[1:],
                     loc="lower right",
                 )
