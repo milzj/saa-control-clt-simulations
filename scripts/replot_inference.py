@@ -13,6 +13,7 @@ Usage (from the repo root):
     python scripts/replot_inference.py                  # every saved run
     python scripts/replot_inference.py <run_dir> ...    # specific run folders
     python scripts/replot_inference.py --subsampling-only <run_dir> ...
+    python scripts/replot_inference.py --reference <clt_reference.json> <run_dir>
     python scripts/replot_inference.py --dry-run        # list, write nothing
 """
 
@@ -20,6 +21,7 @@ import argparse
 from contextlib import contextmanager
 import glob
 import importlib
+import json
 import os
 
 import matplotlib
@@ -27,6 +29,9 @@ import matplotlib
 matplotlib.use("Agg")
 
 import ensemblecontrol
+import matplotlib.pyplot as plt
+from ensemblecontrol.inference_plotting import configure_style
+from matplotlib.axes import Axes
 
 from saa_clt.outputs import repo_root
 from saa_clt.subsampling_width_mc import subsampling_cis_from_deltas
@@ -81,12 +86,64 @@ def _plot_subsampling(*args, **kwargs):
         return ensemblecontrol.plot_subsampling(*args, **kwargs)
 
 
-def replot(run_dir, dry_run=False, subsampling_only=False):
+def _plot_reference_sweeps(runs, run_dir, stamp, value_ylim, reference_value):
+    sweeps = []
+    legend_top = 0.0
+    reference_label = r"$\widehat J_{N_{\mathrm{ref}}}^*$"
+    for prefix, run in runs:
+        levels = run["levels"]
+        if prefix == "subsampling":
+            panels = _plot_subsampling(run, band_level=levels[0], value_ylim=value_ylim)
+        else:
+            panels = ensemblecontrol.plot_plugin(run, value_ylim=value_ylim)
+
+        try:
+            # The figure-returning API also returns histograms and log-log width plots.
+            interval_panels = ((fig, ax) for fig, ax in panels if isinstance(ax, Axes)
+                               and ax.get_xscale() == "log" and ax.get_yscale() == "linear")
+            for level, (fig, ax) in zip(levels, interval_panels, strict=True):
+                original_legend = ax.get_legend()
+                original_labels = [text.get_text() for text in original_legend.get_texts()]
+                data_handles, _ = ax.get_legend_handles_labels()
+                reference_line = ax.axhline(reference_value, color="tab:brown",
+                                            ls="--", lw=1.6, zorder=1)
+                legend = ax.legend(
+                    [data_handles[0], reference_line] + original_legend.legend_handles[1:],
+                    [original_labels[0], reference_label] + original_labels[1:],
+                    loc="lower right",
+                )
+                bounds = legend.get_window_extent(fig.canvas.get_renderer())
+                legend_top = max(legend_top, ax.transAxes.inverted().transform_bbox(bounds).ymax)
+                sweeps.append((prefix, level, fig, ax))
+        finally:
+            for fig, _ in panels:
+                plt.close(fig)
+
+    # Keep the original data range above the tallest legend in every panel.
+    lo, hi = value_ylim
+    reserve = legend_top + 0.025
+    if reserve >= 1:
+        raise ValueError("The reference legend is too tall to fit inside the axes")
+    lower_limit = lo - (hi - lo) * reserve / (1 - reserve)
+    written = []
+    for prefix, level, fig, ax in sweeps:
+        ax.set_ylim(lower_limit, hi)
+        for fmt in FORMATS:
+            filename = f"{prefix}_{stamp}_ci{100 * level:.0f}_reference.{fmt}"
+            path = os.path.join(run_dir, filename)
+            fig.savefig(path, dpi=130)
+            written.append(path)
+    return written
+
+
+def replot(run_dir, dry_run=False, subsampling_only=False, reference_path=None):
     """Re-render whichever algorithms the run folder holds, overwriting in place.
 
     The folder name IS the run stamp (figures are ``<prefix>_<stamp>_...``), so it is
     passed explicitly -- letting the plotters auto-stamp would scatter a second,
     today-stamped copy of every figure alongside the originals.
+    With ``reference_path``, only interval sweeps are saved, with a separate
+    ``_reference`` suffix.
     """
     stamp = os.path.basename(os.path.normpath(run_dir))
     plugin_path = os.path.join(run_dir, PLUGIN_JSON)
@@ -108,13 +165,40 @@ def replot(run_dir, dry_run=False, subsampling_only=False):
             if run is not None]
     if dry_run:
         suffix = " (subsampling figures only)" if subsampling_only else ""
+        if reference_path is not None:
+            suffix += f" (interval sweeps with reference from {reference_path})"
         print("[replot] would re-render %s from %s (stamp %s)%s"
               % (run_dir, " + ".join(have), stamp, suffix))
         return []
 
+    if subsampling_only and sub_run is None:
+        raise ValueError("--subsampling-only requires a subsampling.json file")
+
+    if reference_path is not None:
+        if not have:
+            raise ValueError("--reference requires a plugin.json or subsampling.json file")
+        with open(reference_path) as fh:
+            reference = json.load(fh)
+        if value_ylim is None:
+            cis = _plugin_cis(plugin_run) if plugin_run is not None else _subsampling_cis(sub_run)
+            value_ylim = ensemblecontrol.value_ylim_across(cis)
+        lo, hi = value_ylim
+        pad = 0.05 * (hi - lo)
+        reference_value = reference["f_ref"]
+        value_ylim = (min(lo, reference_value - pad), max(hi, reference_value + pad))
+
+        runs = [] if subsampling_only else [("plugin", plugin_run)]
+        runs.append(("subsampling", sub_run))
+        configure_style()
+        with plt.rc_context({"text.usetex": False, "font.serif": ["DejaVu Serif"]}):
+            written = _plot_reference_sweeps(
+                [(prefix, run) for prefix, run in runs if run is not None],
+                run_dir, stamp, value_ylim, reference_value)
+        print(f"[replot] {run_dir}: saved {len(written)} figures with "
+              f"the {reference['n_ref']}-scenario reference from {reference_path}")
+        return written
+
     if subsampling_only:
-        if sub_run is None:
-            raise ValueError("--subsampling-only requires a subsampling.json file")
         written = _plot_subsampling(
             sub_run,
             outdir=run_dir,
@@ -151,8 +235,12 @@ def main():
         action="store_true",
         help="rewrite only the PDF/PNG subsampling figures",
     )
+    parser.add_argument("--reference", metavar="PATH",
+                        help="include the stored CLT reference in CI sweeps for one run folder")
     args = parser.parse_args()
 
+    if args.reference is not None and len(args.run_dirs) != 1:
+        parser.error("--reference requires exactly one run folder")
     run_dirs = args.run_dirs or find_run_dirs()
     if not run_dirs:
         parser.error("no saved inference runs found under results/*/inference/*")
@@ -163,6 +251,7 @@ def main():
             run_dir,
             dry_run=args.dry_run,
             subsampling_only=args.subsampling_only,
+            reference_path=args.reference,
         )
 
 

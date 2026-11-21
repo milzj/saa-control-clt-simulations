@@ -1,0 +1,15 @@
+\begin{table}[t]
+  \centering
+  \caption{Estimated coverage of the Student-$t$ plug-in confidence interval for the population optimal value of the fed-batch ethanol fermentation example. The population optimum is proxied by the SAA optimal value on an independent reference sample of size $N_{\mathrm{ref}}=4096$. For each training size $N$ and nominal level $1-\beta$, $L/R$ is the empirical coverage over $R=1000$ replications and $\widehat p_{R,10^{-6}}(L)$ is the $(1-10^{-6})$ lower confidence bound on the coverage probability relative to the fixed reference value. The interval uses the variance normalization $1/(N-1)$ and Student-$t$ critical values with $N-1$ degrees of freedom, using the same replications and reference as the normal interval.}
+  \begin{tabular}{rcccccc}
+    \toprule
+     & \multicolumn{2}{c}{$1-\beta = 0.90$} & \multicolumn{2}{c}{$1-\beta = 0.95$} & \multicolumn{2}{c}{$1-\beta = 0.99$} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+    $N$ & $L/R$ & $\widehat p_{R,10^{-6}}(L)$ & $L/R$ & $\widehat p_{R,10^{-6}}(L)$ & $L/R$ & $\widehat p_{R,10^{-6}}(L)$ \\
+    \midrule
+    32 & 0.906 & 0.855 & 0.954 & 0.915 & 0.993 & 0.971 \\
+    64 & 0.902 & 0.851 & 0.958 & 0.920 & 0.989 & 0.964 \\
+    \bottomrule
+  \end{tabular}
+  \label{table:ethanol-coverage-t}
+\end{table}

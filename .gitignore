@@ -15,6 +15,8 @@
 !/results/revision/coverage_replications.json
 !/results/revision/coverage_plugin.tex
 !/results/revision/coverage_plugin_t.tex
+!/results/revision/figures/
+!/results/revision/ethanol_coverage/
 /logs/*
 !/logs/.gitkeep
 

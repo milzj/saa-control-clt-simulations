@@ -15,6 +15,10 @@ from scipy.stats import beta, norm, t
 ROOT = Path(__file__).resolve().parents[2]
 LEVELS = (0.90, 0.95, 0.99)
 DELTA = 1e-6
+EXAMPLES = {
+    "fed-batch-reactor": ("fed-batch reactor", "table:fed-batch-coverage"),
+    "ethanol-fermentation": ("fed-batch ethanol fermentation example", "table:ethanol-coverage"),
+}
 
 
 def coverage_rows(data, method):
@@ -59,30 +63,10 @@ def coverage_rows(data, method):
     return sorted(rows, key=lambda row: row["N"])
 
 
-def latex_table(data, method):
-    """Use the manuscript's three-decimal, six-statistic table layout."""
+def latex_tabular(data, method):
+    """Render the table body for inclusion in an existing LaTeX float."""
     rows = coverage_rows(data, method)
-    name = r"normal plug-in confidence interval" if method == "z" else r"Student-$t$ plug-in confidence interval"
-    label = "table:fed-batch-coverage" + ("-t" if method == "t" else "")
-    caption = (
-        r"Estimated coverage of the " + name
-        + r" for the population optimal value of the fed-batch reactor. "
-        + r"The population optimum is proxied by the SAA optimal value on an "
-        + r"independent reference sample of size $N_{\mathrm{ref}}="
-        + str(data["n_ref"]) + r"$. For each training size $N$ and nominal level "
-        + r"$1-\beta$, $L/R$ is the empirical coverage over $R=" + str(data["R"])
-        + r"$ replications and $\widehat p_{R,10^{-6}}(L)$ is the "
-        + r"$(1-10^{-6})$ lower confidence bound on the coverage probability "
-        + r"relative to the fixed reference value."
-    )
-    if method == "t":
-        caption += (
-            r" The interval uses the variance normalization $1/(N-1)$ and "
-            r"Student-$t$ critical values with $N-1$ degrees of freedom, "
-            r"using the same replications and reference as the normal interval."
-        )
     lines = [
-        r"\begin{table}[t]", r"  \centering", r"  \caption{" + caption + "}",
         r"  \begin{tabular}{rcccccc}", r"    \toprule",
         r"     & \multicolumn{2}{c}{$1-\beta = 0.90$} & \multicolumn{2}{c}{$1-\beta = 0.95$} & \multicolumn{2}{c}{$1-\beta = 0.99$} \\",
         r"    \cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}",
@@ -94,25 +78,61 @@ def latex_table(data, method):
         for value in row["values"]:
             cells.extend([format(value["coverage"], ".3f"), format(value["lower"], ".3f")])
         lines.append("    " + " & ".join(cells) + r" \\")
-    lines.extend([r"    \bottomrule", r"  \end{tabular}",
-                  r"  \label{" + label + "}", r"\end{table}"])
+    lines.extend([r"    \bottomrule", r"  \end{tabular}"])
+    return "\n".join(lines) + "\n"
+
+
+def latex_table(data, method, example="fed-batch-reactor"):
+    """Use the manuscript's three-decimal, six-statistic table layout."""
+    name = r"normal plug-in confidence interval" if method == "z" else r"Student-$t$ plug-in confidence interval"
+    example_name, label = EXAMPLES[example]
+    caption = (
+        r"Estimated coverage of the " + name
+        + r" for the population optimal value of the " + example_name + ". "
+        + r"The population optimum is proxied by the SAA optimal value on an "
+        + r"independent reference sample of size $N_{\mathrm{ref}}="
+        + str(data["n_ref"]) + r"$. For each training size $N$ and nominal level "
+        + r"$1-\beta$, $L/R$ is the empirical coverage over $R=" + str(data["R"])
+        + r"$ replications and $\widehat p_{R,10^{-6}}(L)$ is the "
+        + r"$(1-10^{-6})$ lower confidence bound on the coverage probability "
+        + r"relative to the fixed reference value."
+    )
+    if method == "t":
+        label += "-t"
+        caption += (
+            r" The interval uses the variance normalization $1/(N-1)$ and "
+            r"Student-$t$ critical values with $N-1$ degrees of freedom, "
+            r"using the same replications and reference as the normal interval."
+        )
+    lines = [
+        r"\begin{table}[t]", r"  \centering", r"  \caption{" + caption + "}",
+        latex_tabular(data, method).rstrip("\n"),
+        r"  \label{" + label + "}", r"\end{table}",
+    ]
     return "\n".join(lines) + "\n"
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--input", type=Path,
-                        default=ROOT / "results/revision/coverage_replications.json")
-    parser.add_argument("--outdir", type=Path, default=ROOT / "results/revision")
+    parser.add_argument("--example", choices=EXAMPLES, default="fed-batch-reactor")
+    parser.add_argument("--input", type=Path)
+    parser.add_argument("--outdir", type=Path)
     args = parser.parse_args()
-    with args.input.open() as stream:
+    revision = ROOT / "results/revision"
+    input_name = "coverage_replications.json"
+    if args.example == "ethanol-fermentation":
+        revision /= "ethanol_coverage"
+        input_name = "coverage_plugin_intervals.json"
+    input_path = args.input or revision / input_name
+    outdir = args.outdir or revision
+    with input_path.open() as stream:
         data = json.load(stream)
     # Validate and build both tables before writing either output.
-    tables = {name: latex_table(data, method) for method, name in (
+    tables = {name: latex_table(data, method, args.example) for method, name in (
         ("z", "coverage_plugin.tex"), ("t", "coverage_plugin_t.tex"))}
-    args.outdir.mkdir(parents=True, exist_ok=True)
+    outdir.mkdir(parents=True, exist_ok=True)
     for name, content in tables.items():
-        path = args.outdir / name
+        path = outdir / name
         path.write_text(content)
         print(path)
 
